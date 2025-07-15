@@ -1,24 +1,50 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
+import { useNavigate } from "react-router-dom";
+ 
+
 
 function App() {
   const auth = useAuth();
+  const navigate = useNavigate();
   const [shoes, setShoes] = useState([]);
   const [loadingShoes, setLoadingShoes] = useState(true);
 
+  // useEffect(() => {
+  //   if (auth.isAuthenticated) {
+  //     fetch("http://localhost:5000/api/shoes")
+  //       .then((res) => res.json())
+  //       .then((data) => {
+  //         console.log("Fetched shoes:", data); // 👈 This logs the response
+  //         setShoes(data);
+  //         setLoadingShoes(false);
+  //       })
+  //       .catch((err) => {
+  //         console.error("Failed to fetch shoes:", err);
+  //         setLoadingShoes(false);
+  //       });
+
   useEffect(() => {
-    if (auth.isAuthenticated) {
-      fetch("http://localhost:5000/api/shoes")
-        .then((res) => res.json())
-        .then((data) => {
-          console.log("Fetched shoes:", data); // 👈 This logs the response
+  if (auth.isAuthenticated && auth.user) {
+    const fetchShoes = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/shoes");
+        const data = await res.json();
+        console.log("Fetched shoes:", data);
+        console.log("Type of data:", typeof data);
+        if (Array.isArray(data)) {
           setShoes(data);
-          setLoadingShoes(false);
-        })
-        .catch((err) => {
-          console.error("Failed to fetch shoes:", err);
-          setLoadingShoes(false);
-        });
+        } else {
+          console.error("Shoes data is not an array:", data);
+          setShoes([]); // Prevent further issues by setting empty array
+        }
+      } catch (err) {
+        console.error("Failed to fetch shoes:", err);
+        setShoes([]); // Fallback
+      } finally {
+        setLoadingShoes(false);
+      }
+    };
 
 
     const sendUserToBackend = async () => {
@@ -47,7 +73,7 @@ function App() {
       console.error("Failed to send user to backend:", err);
     }
   };
-
+  fetchShoes();
   sendUserToBackend();
         
     }
@@ -68,7 +94,15 @@ function App() {
 
     return (
       <div style={{ padding: "2rem", fontFamily: "Arial" }}>
-        <h2>Welcome, {name}</h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h2>Welcome, {name}</h2>
+          <button
+            style={{ padding: "0.5rem 1rem", backgroundColor: "#4f46e5", color: "white", borderRadius: "5px" }}
+            onClick={() => navigate("/add-product")}
+          >
+            Add Product
+          </button>
+        </div>
 
         {loadingShoes ? (
           <p>Loading available shoes...</p>
