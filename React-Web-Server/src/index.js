@@ -2,8 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { AuthProvider } from "react-oidc-context";
-import AddProductForm from "./AddProductForm.js"; //added this
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import AppRoutes from "./routes/AppRoutes.js";
 
 
 const cognitoAuthConfig = {
@@ -21,11 +21,10 @@ root.render(
   <React.StrictMode>
     <AuthProvider {...cognitoAuthConfig}>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<App />} />
-          <Route path="/add-product" element={<AddProductForm />} />
-        </Routes>
-      </BrowserRouter> 
+        <App>
+          <AppRoutes />
+        </App>
+      </BrowserRouter>
     </AuthProvider>
   </React.StrictMode>
 );
