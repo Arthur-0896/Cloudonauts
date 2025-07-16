@@ -1,6 +1,7 @@
+// App.js
 import React from "react";
 import { useAuth } from "react-oidc-context";
-import AuthenticatedHome from "./pages/AuthenticatedHome"
+import { Outlet } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 
 function App() {
@@ -9,7 +10,13 @@ function App() {
   if (auth.isLoading) return <div>Loading auth...</div>;
   if (auth.error) return <div>Error: {auth.error.message}</div>;
 
-  return auth.isAuthenticated ? <AuthenticatedHome auth={auth} /> : <LoginPage auth={auth} />;
+  return auth.isAuthenticated ? (
+    <div style={{ fontFamily: "Arial", padding: "2rem" }}>
+      <Outlet /> {/* 👈 This will render AuthenticatedHome, AddProductForm, etc. */}
+    </div>
+  ) : (
+    <LoginPage auth={auth} />
+  );
 }
 
 export default App;

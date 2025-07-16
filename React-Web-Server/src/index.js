@@ -1,10 +1,9 @@
+// index.js
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App";
 import { AuthProvider } from "react-oidc-context";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import AppRoutes from "./routes/AppRoutes.js";
-
+import { BrowserRouter } from "react-router-dom";
+import AppRoutes from "./routes/AppRoutes";
 
 const cognitoAuthConfig = {
   authority: "https://cognito-idp.us-east-2.amazonaws.com/us-east-2_mDEOMLwWP",
@@ -16,16 +15,12 @@ const cognitoAuthConfig = {
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
-// wrap the application with AuthProvider
 root.render(
   <React.StrictMode>
     <AuthProvider {...cognitoAuthConfig}>
       <BrowserRouter>
-        <App>
-          <AppRoutes />
-        </App>
+        <AppRoutes />
       </BrowserRouter>
     </AuthProvider>
   </React.StrictMode>
 );
-
