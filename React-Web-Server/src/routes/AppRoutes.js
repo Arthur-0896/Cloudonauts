@@ -2,7 +2,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import App from "../App";
-import AuthenticatedHome from "../pages/AuthenticatedHome";
+import AuthenticatedHome from "../pages/authenticatedHome";
 import AddProductForm from "../pages/AddProductForm";
 
 function AppRoutes() {

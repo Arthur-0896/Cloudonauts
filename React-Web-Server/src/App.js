@@ -12,7 +12,7 @@ function App() {
 
   return auth.isAuthenticated ? (
     <div style={{ fontFamily: "Arial", padding: "2rem" }}>
-      <Outlet /> {/* 👈 This will render AuthenticatedHome, AddProductForm, etc. */}
+      <Outlet context={{ auth }} /> {/* 👈 Pass auth via Outlet context */}
     </div>
   ) : (
     <LoginPage auth={auth} />

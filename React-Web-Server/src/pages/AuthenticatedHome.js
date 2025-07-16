@@ -3,14 +3,14 @@ import ShoeGrid from "../components/ShoeGrid";
 import UserHeader from "../components/UserHeader";
 import useUserTracker from "../hooks/useUserTracker";
 import { useNavigate } from "react-router-dom";
+import { useOutletContext } from "react-router-dom";
 
-function AuthenticatedHome({ auth }) {
+function AuthenticatedHome({ auth: propAuth }) {
   const [shoes, setShoes] = useState([]);
   const [loadingShoes, setLoadingShoes] = useState(true);
   const navigate = useNavigate();
-
-  const name = auth.user?.profile?.name || auth.user?.profile?.email;
-  useUserTracker(auth);
+  const outletContext = useOutletContext();
+  const auth = propAuth || (outletContext && outletContext.auth);
 
   useEffect(() => {
     fetch("http://localhost:5000/api/shoes")
@@ -24,6 +24,16 @@ function AuthenticatedHome({ auth }) {
         setLoadingShoes(false);
       });
   }, []);
+
+  // Defensive check for auth and auth.user for rendering only
+  if (!auth || !auth.user) {
+    return (
+      <div style={{ padding: "2rem", color: "red" }}>
+        <p>User not authenticated. Please sign in.</p>
+      </div>
+    );
+  }
+  const name = auth.user?.profile?.name || auth.user?.profile?.email;
 
   return (
     <div style={{ padding: "2rem", fontFamily: "Arial" }}>
