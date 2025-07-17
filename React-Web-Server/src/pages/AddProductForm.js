@@ -51,19 +51,33 @@ function AddProductForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const payload = new FormData();
-    for (const key in formData) payload.append(key, formData[key]);
-    if (imageFile) payload.append("image", imageFile);
+    // Prepare JSON payload (no image for backend API)
+  const payload = {
+    category: formData.category,
+    gender: formData.gender,
+    productName: formData.productName,
+    size: formData.size,
+    price: parseFloat(formData.price),
+    count: parseInt(formData.count, 10)
+  };
+    // const payload = new FormData();
+    // for (const key in formData) payload.append(key, formData[key]);
+    // if (imageFile) payload.append("image", imageFile);
 
     try {
-      const res = await fetch("http://localhost:5000/api/products", {
+      const res = await fetch("http://localhost:5000/api/add-product", {
         method: "POST",
-        body: payload,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
       });
 
       const result = await res.json();
-      alert("Product added!");
-      window.location.href = "/";
+      if (res.ok) {
+        alert("Product is Added");
+        window.location.href = "/";
+      } else {
+        alert(result.error || "Failed to add product");
+      }
     } catch (err) {
       alert("Failed to add product");
       console.error(err);
