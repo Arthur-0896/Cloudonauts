@@ -3,7 +3,7 @@ import boto3
 
 admin_bp = Blueprint('admin_bp', __name__, url_prefix='/api')
 
-client = boto3.client('cognito-idp')
+client = boto3.client('cognito-idp', region_name='us-east-2')
 
 @admin_bp.route('/admin-register', methods=['POST'])
 def register_admin():
