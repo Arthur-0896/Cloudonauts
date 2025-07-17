@@ -36,9 +36,19 @@ function AuthenticatedHome({ auth: propAuth }) {
   const name = auth.user?.profile?.name || auth.user?.profile?.email;
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "Arial" }}>
-      <UserHeader name={name} onSignOut={() => auth.removeUser()} />
-      {loadingShoes ? <p>Loading available shoes...</p> : <ShoeGrid shoes={shoes} />}
+    <div style={{ 
+      padding: "2rem", 
+      fontFamily: "Arial", 
+      position: "relative", 
+      minHeight: "100vh",
+      backgroundColor: "#e2eeeefe"}}>
+    <UserHeader name={name} onSignOut={() => auth.removeUser()} />
+    <div style={{
+      position: "absolute",
+      top: "2rem",
+      right: "2rem",
+      zIndex: 10
+    }}>
       <button
         onClick={() => navigate("/add-product")}
         style={{
@@ -47,15 +57,36 @@ function AuthenticatedHome({ auth: propAuth }) {
           color: "white",
           border: "none",
           borderRadius: "5px",
-          cursor: "pointer",
-          marginLeft: "1rem"
+          cursor: "pointer"
         }}
       >
         Add Product
       </button>
-
     </div>
+    {loadingShoes ? <p>Loading available shoes...</p> : <ShoeGrid shoes={shoes} />}
+  </div>
+    
   );
 }
 
 export default AuthenticatedHome;
+
+ // <div style={{ padding: "2rem", fontFamily: "Arial" }}>
+    //   <UserHeader name={name} onSignOut={() => auth.removeUser()} />
+    //   {loadingShoes ? <p>Loading available shoes...</p> : <ShoeGrid shoes={shoes} />}
+    //   <button
+    //     onClick={() => navigate("/add-product")}
+    //     style={{
+    //       padding: "0.5rem 1rem",
+    //       backgroundColor: "#4CAF50",
+    //       color: "white",
+    //       border: "none",
+    //       borderRadius: "5px",
+    //       cursor: "pointer",
+    //       marginLeft: "1rem"
+    //     }}
+    //   >
+    //     Add Product
+    //   </button>
+
+    // </div>
