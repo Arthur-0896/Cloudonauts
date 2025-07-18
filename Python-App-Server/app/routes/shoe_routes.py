@@ -14,7 +14,7 @@ def add_product():
     price = data.get('price')
     count = data.get('count')
 
-    if not all([category, gender, productName, size, price, count]):
+    if not all([category, gender, productName, size, price]) or count is None:
         return jsonify({'error': 'Missing required fields'}), 400
 
     try:
