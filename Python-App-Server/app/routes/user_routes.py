@@ -29,23 +29,32 @@ def track_user():
         return jsonify({"error": str(e)}), 401
 
 # Route to get all products ordered by a user
-@user_bp.route('/user-products/<user_uid>', methods=['GET'])
-def get_user_products(user_uid):
+@user_bp.route('/user-orders/<user_uid>', methods=['GET'])
+def get_user_orders(user_uid):
     try:
         user = User.query.filter_by(uid=user_uid).first()
         if not user:
             return jsonify({"error": "User not found"}), 404
-        products = []
+        orders_list = []
+        from app.models import OrderProduct, Product
         for order in user.orders:
-            for product in order.products:
-                products.append({
-                    'pid': product.pid,
-                    'category': product.category,
-                    'gender': product.gender,
-                    'productName': product.productName,
-                    'size': product.size,
-                    'price': str(product.price)
-                })
-        return jsonify(products)
+            order_dict = {
+                'order_id': order.oid,
+                'products': []
+            }
+            order_products = OrderProduct.query.filter_by(oid=order.oid).all()
+            for op in order_products:
+                product = Product.query.filter_by(pid=op.pid).first()
+                if product:
+                    order_dict['products'].append({
+                        'pid': product.pid,
+                        'category': product.category,
+                        'gender': product.gender,
+                        'productName': product.productName,
+                        'size': product.size,
+                        'price': str(product.price)
+                    })
+            orders_list.append(order_dict)
+        return jsonify(orders_list)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
