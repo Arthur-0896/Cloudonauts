@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "react-oidc-context";
 import { useNavigate } from "react-router-dom";
- 
 
 
 function App() {
@@ -30,6 +29,7 @@ function App() {
       try {
         const res = await fetch("http://localhost:5000/api/shoes");
         const data = await res.json();
+        console.log("connected to this DB:", )
         console.log("Fetched shoes:", data);
         console.log("Type of data:", typeof data);
         if (Array.isArray(data)) {
@@ -110,17 +110,53 @@ function App() {
           <div>
             <h3>Available Shoes:</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
-              {shoes.map((shoe) => (
-                <div key={shoe.id} style={{ border: "1px solid #ccc", padding: "1rem", borderRadius: "8px" }}>
-                  <img
-                    src={shoe.s3link}
-                    alt={shoe.name}
-                    style={{ width: "100%", height: "150px", objectFit: "cover", marginBottom: "0.5rem" }}
-                  />
-                  <h4>{shoe.name}</h4>
-                  <p><strong>Size:</strong> {shoe.size}</p>
-                </div>
-              ))}
+              {shoes.map((shoe) => {
+  const isOutOfStock = shoe.inventory_count === 0;  // Assuming shoe.count exists
+
+  return (
+    <div
+      key={shoe.id}
+      style={{
+        border: "1px solid #ccc",
+        padding: "1rem",
+        borderRadius: "8px",
+        position: "relative",
+        opacity: isOutOfStock ? 0.5 : 1,   // grey out if out of stock
+        pointerEvents: isOutOfStock ? "none" : "auto", // disable clicks if out of stock
+      }}
+    >
+      <img
+        src={shoe.s3link}
+        alt={shoe.name}
+        style={{ width: "100%", height: "150px", objectFit: "cover", marginBottom: "0.5rem" }}
+      />
+      {isOutOfStock && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(128, 128, 128, 0.7)",
+            color: "white",
+            fontWeight: "bold",
+            fontSize: "1.2rem",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            borderRadius: "8px",
+            pointerEvents: "none",
+          }}
+        >
+          Out of Stock
+        </div>
+      )}
+      <h4>{shoe.name}</h4>
+      <p><strong>Size:</strong> {shoe.size}</p>
+    </div>
+  );
+})}
             </div>
           </div>
         )}
