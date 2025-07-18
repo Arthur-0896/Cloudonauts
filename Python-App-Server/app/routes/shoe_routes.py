@@ -14,7 +14,7 @@ def add_product():
     price = data.get('price')
     count = data.get('count')
 
-    if not all([category, gender, productName, size, price, count]):
+    if not all([category, gender, productName, size, price]) or count is None:
         return jsonify({'error': 'Missing required fields'}), 400
 
     try:
@@ -45,12 +45,15 @@ def get_all_shoes():
         shoeList = Product.query.all()
         return jsonify([{
             'pid': shoe.pid,
+            'iid': shoe.iid, 
             'category': shoe.category,
             'gender': shoe.gender,
             'productName': shoe.productName,
             'size': shoe.size,
             'price': str(shoe.price),
-            'inventory_count': shoe.inventory.count if shoe.inventory else None
-        } for shoe in shoeList]), 200
+            'inventory': {
+                'count' : shoe.inventory.count if shoe.inventory else 0
+        } 
+        }for shoe in shoeList]), 200
     except Exception as e:
         return jsonify({"error": "Failed to retrieve shoes", "message": str(e)}), 500
