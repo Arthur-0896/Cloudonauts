@@ -1,3 +1,6 @@
+Python-App-Server/__pycache__/
 Python-App-Server/app/__pycache__/
 Python-App-Server/app/routes/__pycache__/
 Python-App-Server/app/auth/__pycache__/
+Python-App-Server/migrations/
+

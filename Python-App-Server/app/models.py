@@ -33,6 +33,8 @@ class Product(db.Model):
     productName = db.Column(db.String(255))
     size = db.Column(db.String(255))
     price = db.Column(db.Numeric(10, 2))
+    imageLink = db.Column(db.String(255))
+    thumbLink = db.Column(db.String(255))
     iid = db.Column(db.Integer, db.ForeignKey('inventory.iid'))
 
     inventory = db.relationship('Inventory', back_populates='products')
