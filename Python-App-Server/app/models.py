@@ -1,29 +1,4 @@
 from app import db
-<<<<<<< HEAD
-
-class shoes(db.Model):
-    __tablename__ = 'shoes'
-
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String(100), nullable=False)
-    size = db.Column(db.Integer, nullable=False)
-    s3link = db.Column(db.Text, nullable=False)
-    inventory_count = db.Column(db.Integer, default=0)
-
-    def __repr__(self):
-        return f"<Shoe {self.name} (Size: {self.size}) (Ineventroy counts: {self.inventory_count})>"
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'size': self.size,
-            's3link': self.s3link,
-            'inventory_count': self.inventory_count
-        }
-
-=======
->>>>>>> main
 class User(db.Model):
     __tablename__ = 'users'
 
