@@ -5,7 +5,7 @@ from app.models import User
 from app.auth.token_verify import verify_token
 import traceback
 
-user_bp = Blueprint('user_bp', __name__, url_prefix='/api')
+user_bp = Blueprint('user_bp', __name__)
 
 @user_bp.route('/users', methods=['POST'])
 def track_user():

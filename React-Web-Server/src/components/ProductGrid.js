@@ -1,10 +1,10 @@
 import React from "react";
-import ShoeCard from "./ShoeCard";
+import ProductCard from "./ProductCard";
 
-function ShoeGrid({ shoes }) {
+function productGrid({ products }) {
   return (
     <div>
-      <h3>Available Shoes:</h3>
+      <h3>Available products:</h3>
       <div style={{ display: "grid", 
         gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", 
         gap: "1rem",
@@ -12,12 +12,12 @@ function ShoeGrid({ shoes }) {
         padding: "2rem",            // Add padding around grid
         borderRadius: "16px"
         }}>
-        {shoes.map((shoe) => (
-          <ShoeCard key={shoe.id} shoe={shoe} />
+        {products.map((product) => (
+          <ProductCard key={product.id} product={product} />
         ))}
       </div>
     </div>
   );
 }
 
-export default ShoeGrid;
+export default productGrid;

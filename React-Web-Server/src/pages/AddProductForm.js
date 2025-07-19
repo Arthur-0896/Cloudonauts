@@ -65,7 +65,8 @@ function AddProductForm() {
     // if (imageFile) payload.append("image", imageFile);
 
     try {
-      const res = await fetch("http://localhost:5000/api/add-product", {
+      const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
+      const res = await fetch(`${apiBaseUrl}/add-product`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

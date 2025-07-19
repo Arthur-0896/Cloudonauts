@@ -15,7 +15,8 @@ const useUserTracker = (auth) => {
       };
 
       try {
-        const res = await fetch("http://localhost:5000/api/users", {
+        const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
+        const res = await fetch(`${apiBaseUrl}/users`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

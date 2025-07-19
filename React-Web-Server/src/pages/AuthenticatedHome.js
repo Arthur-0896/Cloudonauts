@@ -1,27 +1,29 @@
 import React, { useEffect, useState } from "react";
-import ShoeGrid from "../components/ShoeGrid";
+import ProductGrid from "../components/ProductGrid";
 import UserHeader from "../components/UserHeader";
 import useUserTracker from "../hooks/useUserTracker";
 import { useNavigate } from "react-router-dom";
 import { useOutletContext } from "react-router-dom";
 
 function AuthenticatedHome({ auth: propAuth }) {
-  const [shoes, setShoes] = useState([]);
-  const [loadingShoes, setLoadingShoes] = useState(true);
+  const [products, setproducts] = useState([]);
+  const [loadingproducts, setLoadingproducts] = useState(true);
   const navigate = useNavigate();
   const outletContext = useOutletContext();
   const auth = propAuth || (outletContext && outletContext.auth);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/shoes")
+    const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
+    console.log("API Base URL:", apiBaseUrl);
+    fetch(`${apiBaseUrl}/products`)
       .then((res) => res.json())
       .then((data) => {
-        setShoes(data);
-        setLoadingShoes(false);
+        setproducts(data);
+        setLoadingproducts(false);
       })
       .catch((err) => {
-        console.error("Failed to fetch shoes:", err);
-        setLoadingShoes(false);
+        console.error("Failed to fetch products:", err);
+        setLoadingproducts(false);
       });
   }, []);
 
@@ -63,7 +65,7 @@ function AuthenticatedHome({ auth: propAuth }) {
         Add Product
       </button>
     </div>
-    {loadingShoes ? <p>Loading available shoes...</p> : <ShoeGrid shoes={shoes} />}
+    {loadingproducts ? <p>Loading available products...</p> : <ProductGrid products={products} />}
   </div>
     
   );
@@ -73,7 +75,7 @@ export default AuthenticatedHome;
 
  // <div style={{ padding: "2rem", fontFamily: "Arial" }}>
     //   <UserHeader name={name} onSignOut={() => auth.removeUser()} />
-    //   {loadingShoes ? <p>Loading available shoes...</p> : <ShoeGrid shoes={shoes} />}
+    //   {loadingproducts ? <p>Loading available products...</p> : <ProductGrid products={products} />}
     //   <button
     //     onClick={() => navigate("/add-product")}
     //     style={{
