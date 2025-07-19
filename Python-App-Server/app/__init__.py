@@ -22,11 +22,11 @@ def create_app():
 
     # Register Blueprints
     from app.routes.user_routes import user_bp
-    from app.routes.shoe_routes import shoe_bp
+    from app.routes.product_routes import product_bp
     from app.routes.admin_routes import admin_bp
 
     app.register_blueprint(user_bp)
-    app.register_blueprint(shoe_bp)
+    app.register_blueprint(product_bp)
     app.register_blueprint(admin_bp)
 
     return app

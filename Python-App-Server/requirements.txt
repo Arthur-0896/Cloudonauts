@@ -7,3 +7,4 @@ boto3
 Flask-CORS
 python-jose
 Flask-requests
+Flask-Migrate

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from flask import Blueprint, jsonify
 from app.models import shoes
 from dotenv import load_dotenv
@@ -18,3 +19,5 @@ def get_all_shoes():
         return jsonify([shoe.to_dict() for shoe in shoeList]), 200
     except Exception as e:
         return jsonify({"error": "Failed to retrieve shoes", "message": str(e)}), 500
+=======
+>>>>>>> main

@@ -1,9 +1,10 @@
 from flask import Blueprint, request, jsonify, current_app
 import boto3
 
-admin_bp = Blueprint('admin_bp', __name__, url_prefix='/api')
+client = boto3.client('cognito-idp', region_name='us-east-2')  # or your desired region
 
-client = boto3.client('cognito-idp')
+admin_bp = Blueprint('admin_bp', __name__)
+
 
 @admin_bp.route('/admin-register', methods=['POST'])
 def register_admin():

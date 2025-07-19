@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from "react";
+// App.js
+import React from "react";
 import { useAuth } from "react-oidc-context";
+<<<<<<< HEAD
 import { useNavigate } from "react-router-dom";
 
 
@@ -85,10 +87,18 @@ function App() {
     const cognitoDomain = "https://us-east-2mdeomlwwp.auth.us-east-2.amazoncognito.com";
     window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
   };
+=======
+import { Outlet } from "react-router-dom";
+import LoginPage from "./pages/LoginPage";
+
+function App() {
+  const auth = useAuth();
+>>>>>>> main
 
   if (auth.isLoading) return <div>Loading auth...</div>;
   if (auth.error) return <div>Error: {auth.error.message}</div>;
 
+<<<<<<< HEAD
   if (auth.isAuthenticated) {
     const name = auth.user?.profile?.name || auth.user?.profile?.email;
 
@@ -174,7 +184,14 @@ function App() {
       <button onClick={signOutRedirect} style={{ marginLeft: "1rem" }}>
         Sign out
       </button>
+=======
+  return auth.isAuthenticated ? (
+    <div style={{ fontFamily: "Arial", padding: "2rem" }}>
+      <Outlet context={{ auth }} /> {/* 👈 Pass auth via Outlet context */}
+>>>>>>> main
     </div>
+  ) : (
+    <LoginPage auth={auth} />
   );
 }
 
