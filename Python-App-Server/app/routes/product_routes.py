@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, request
-from app.models import Product, Inventory
+from app.models import Product
 from app import db
 
 product_bp = Blueprint('product_bp', __name__)
@@ -18,23 +18,18 @@ def add_product():
         return jsonify({'error': 'Missing required fields'}), 400
 
     try:
-        # Create inventory entry
-        inventory = Inventory(count=count)
-        db.session.add(inventory)
-        db.session.flush()  # Get inventory.iid before commit
-
-        # Create product entry
+        # Create product entry with inventory as integer
         product = Product(
             category=category,
             gender=gender,
             productName=productName,
             size=size,
             price=price,
-            iid=inventory.iid
+            inventory=count
         )
         db.session.add(product)
         db.session.commit()
-        return jsonify({'message': 'Product and inventory added successfully', 'product_id': product.pid, 'inventory_id': inventory.iid}), 201
+        return jsonify({'message': 'Product added successfully', 'product_id': product.pid, 'inventory': product.inventory}), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -45,15 +40,12 @@ def get_all_products():
         productList = Product.query.all()
         return jsonify([{
             'pid': product.pid,
-            'iid': product.iid, 
             'category': product.category,
             'gender': product.gender,
             'productName': product.productName,
             'size': product.size,
             'price': str(product.price),
-            'inventory': {
-                'count' : product.inventory.count if product.inventory else 0
-        } 
-        }for product in productList]), 200
+            'inventory': product.inventory
+        } for product in productList]), 200
     except Exception as e:
         return jsonify({"error": "Failed to retrieve products", "message": str(e)}), 500

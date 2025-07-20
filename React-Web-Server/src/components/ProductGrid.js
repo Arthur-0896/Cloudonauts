@@ -3,7 +3,7 @@ import React from "react";
 function ProductGrid({ products }) {
   console.log("Products:", products);
   products.forEach((product, index) => {
-    console.log(`Product ${index + 1} inventory count:`, product.inventory.count);
+    console.log(`Product ${index + 1} inventory count:`, product.inventory);
     const priceNumber = parseFloat(product.price);
     if (!isNaN(priceNumber)) {
       console.log(`Product ${index + 1} price is a valid number:`, priceNumber);
@@ -29,7 +29,7 @@ function ProductGrid({ products }) {
       >
         {products.map((product) => {
           const priceNumber = parseFloat(product.price);
-          const isOutOfStock = product.inventory.count === 0;
+          const isOutOfStock = product.inventory === 0;
 
           return (
             <div

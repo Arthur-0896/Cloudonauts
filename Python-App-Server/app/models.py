@@ -35,15 +35,6 @@ class Product(db.Model):
     price = db.Column(db.Numeric(10, 2))
     imageLink = db.Column(db.String(255))
     thumbLink = db.Column(db.String(255))
-    iid = db.Column(db.Integer, db.ForeignKey('inventory.iid'))
+    inventory = db.Column(db.Integer)
 
-    inventory = db.relationship('Inventory', back_populates='products')
     orders = db.relationship('Order', secondary='order_product', back_populates='products')
-
-class Inventory(db.Model):
-    __tablename__ = 'inventory'
-
-    iid = db.Column(db.Integer, primary_key=True)
-    count = db.Column(db.Integer)
-
-    products = db.relationship('Product', back_populates='inventory')
