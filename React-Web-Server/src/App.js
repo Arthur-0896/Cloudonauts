@@ -6,7 +6,7 @@ import { Outlet } from "react-router-dom";
 
 function App() {
   return (
-    <div style={{ fontFamily: "Arial", padding: "2rem" }}>
+    <div style={{ fontFamily: "Arial" }}>
       <Outlet />
     </div>
   );

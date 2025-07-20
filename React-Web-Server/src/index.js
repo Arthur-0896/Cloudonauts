@@ -6,9 +6,9 @@ import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
 
 const cognitoAuthConfig = {
-  authority: "https://cognito-idp.us-east-2.amazonaws.com/us-east-2_mDEOMLwWP",
-  client_id: "1geutha5o3v903feg0p86l72ol",
-  redirect_uri: "http://localhost:3000/",
+  authority: process.env.REACT_APP_COGNITO_AUTHORITY,
+  client_id: process.env.REACT_APP_COGNITO_CLIENT_ID,
+  redirect_uri: process.env.REACT_APP_COGNITO_REDIRECT_URI,
   response_type: "code",
   scope: "email openid phone",
 };

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ProductGrid from "../components/ProductGrid";
+import UserHeader from "../components/UserHeader";
 import { useNavigate } from "react-router-dom";
 
 function AuthenticatedHome({ auth: propAuth }) {
@@ -31,26 +32,17 @@ function AuthenticatedHome({ auth: propAuth }) {
       fontFamily: "Arial", 
       position: "relative", 
       minHeight: "100vh",
-      backgroundColor: "#e2eeeefe"}}>
+      backgroundColor: "#B6EDFD"}}>
+      {/* Render UserHeader at the top */}
+      <div style={{ marginBottom: "2rem" }}>
+        <UserHeader name="Guest" />
+      </div>
       <div style={{
         position: "absolute",
         top: "2rem",
         right: "2rem",
         zIndex: 10
       }}>
-        <button
-          onClick={() => navigate("/add-product")}
-          style={{
-            padding: "0.5rem 1rem",
-            backgroundColor: "#4CAF50",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer"
-          }}
-        >
-          Add Product
-        </button>
       </div>
       {loadingproducts ? <p>Loading available products...</p> : <ProductGrid products={products} />}
     </div>
@@ -58,23 +50,3 @@ function AuthenticatedHome({ auth: propAuth }) {
 }
 
 export default AuthenticatedHome;
-
- // <div style={{ padding: "2rem", fontFamily: "Arial" }}>
-    //   <UserHeader name={name} onSignOut={() => auth.removeUser()} />
-    //   {loadingproducts ? <p>Loading available products...</p> : <ProductGrid products={products} />}
-    //   <button
-    //     onClick={() => navigate("/add-product")}
-    //     style={{
-    //       padding: "0.5rem 1rem",
-    //       backgroundColor: "#4CAF50",
-    //       color: "white",
-    //       border: "none",
-    //       borderRadius: "5px",
-    //       cursor: "pointer",
-    //       marginLeft: "1rem"
-    //     }}
-    //   >
-    //     Add Product
-    //   </button>
-
-    // </div>

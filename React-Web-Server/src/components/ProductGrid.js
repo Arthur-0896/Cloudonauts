@@ -14,9 +14,6 @@ function ProductGrid({ products }) {
 
   return (
     <div>
-      <h3 style={{ textAlign: "center", fontSize: "1.8rem", marginBottom: "1rem" }}>
-        Available Products
-      </h3>
       <div
         style={{
           display: "grid",
@@ -88,27 +85,29 @@ function ProductGrid({ products }) {
                 {!isNaN(priceNumber) ? `$${priceNumber.toFixed(2)}` : "Price not available"}
               </strong>
 
-              <button
-                disabled={isOutOfStock}
-                style={{
-                  marginTop: "1rem",
-                  padding: "0.5rem 1rem",
-                  backgroundColor: isOutOfStock ? "#888" : "#0d9488",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: isOutOfStock ? "not-allowed" : "pointer",
-                  transition: "background-color 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  if (!isOutOfStock) e.target.style.backgroundColor = "#0f766e";
-                }}
-                onMouseLeave={(e) => {
-                  if (!isOutOfStock) e.target.style.backgroundColor = "#0d9488";
-                }}
-              >
-                {isOutOfStock ? "Out of Stock" : "View Details"}
-              </button>
+              {/* Only show button if not out of stock */}
+              {!isOutOfStock && (
+                <button
+                  style={{
+                    marginTop: "1rem",
+                    padding: "0.5rem 1rem",
+                    backgroundColor: "#0d9488",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    transition: "background-color 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = "#0f766e";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = "#0d9488";
+                  }}
+                >
+                  View Details
+                </button>
+              )}
 
               {isOutOfStock && (
                 <div
