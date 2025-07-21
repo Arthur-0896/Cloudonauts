@@ -58,3 +58,7 @@ def get_user_orders(user_uid):
         return jsonify(orders_list)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@user_bp.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"message": "Connection success"}), 200

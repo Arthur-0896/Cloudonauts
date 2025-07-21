@@ -4,6 +4,7 @@ import { Routes, Route } from "react-router-dom";
 import App from "../App";
 import AuthenticatedHome from "../pages/AuthenticatedHome";
 import AddProductForm from "../pages/AddProductForm";
+import SignUpPage from "../pages/SignUpPage";
 
 function AppRoutes() {
   return (
@@ -11,6 +12,7 @@ function AppRoutes() {
       <Route path="/" element={<App />}>
         <Route index element={<AuthenticatedHome />} />
         <Route path="add-product" element={<AddProductForm />} />
+        <Route path="signup" element={<SignUpPage />} />
       </Route>
     </Routes>
   );

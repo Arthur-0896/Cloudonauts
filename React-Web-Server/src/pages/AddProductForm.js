@@ -86,7 +86,7 @@ function AddProductForm() {
   };
 
   return (
-    <div style={{ padding: "2rem", maxWidth: "600px", margin: "auto" }}>
+    <div style={{ padding: "0rem", maxWidth: "600px", margin: "auto" }}>
       <h2>Add New Product</h2>
       <form onSubmit={handleSubmit} encType="multipart/form-data">
         {["category", "gender", "productName", "size", "price", "count"].map((field) => (

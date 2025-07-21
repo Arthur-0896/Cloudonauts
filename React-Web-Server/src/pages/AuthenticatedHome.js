@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import ProductGrid from "../components/ProductGrid";
-import UserHeader from "../components/UserHeader";
 import { useNavigate } from "react-router-dom";
 
 function AuthenticatedHome({ auth: propAuth }) {
@@ -33,10 +32,7 @@ function AuthenticatedHome({ auth: propAuth }) {
       position: "relative", 
       minHeight: "100vh",
       backgroundColor: "#B6EDFD"}}>
-      {/* Render UserHeader at the top */}
-      <div style={{ marginBottom: "2rem" }}>
-        <UserHeader name="Guest" />
-      </div>
+      {/* UserHeader removed to prevent duplicate header */}
       <div style={{
         position: "absolute",
         top: "2rem",
