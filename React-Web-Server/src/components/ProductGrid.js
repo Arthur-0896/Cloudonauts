@@ -59,15 +59,15 @@ function ProductGrid({ products }) {
               }}
             >
               <img
-                src={product.imageLink}
+                src={product.thumbLink}
                 alt={product.productName}
                 onError={(e) => {
                   e.target.onerror = null;
                   e.target.src = "https://via.placeholder.com/150";
                 }}
                 style={{
-                  width: "100%",
-                  height: "200px",
+                  width: "200px",
+                  height: "240px",
                   objectFit: "cover",
                   borderRadius: "8px",
                   marginBottom: "1rem",

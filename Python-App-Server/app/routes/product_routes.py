@@ -45,7 +45,8 @@ def get_all_products():
             'productName': product.productName,
             'size': product.size,
             'price': str(product.price),
-            'inventory': product.inventory
+            'inventory': product.inventory,
+            'thumbLink': product.thumbLink
         } for product in productList]), 200
     except Exception as e:
         return jsonify({"error": "Failed to retrieve products", "message": str(e)}), 500

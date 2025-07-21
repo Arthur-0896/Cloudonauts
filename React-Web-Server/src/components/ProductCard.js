@@ -6,11 +6,11 @@ function productCard({ product }) {
   return (
     <div style={{ border: "1px solid #ccc", padding: "1rem", borderRadius: "8px" }}>
       <img
-        src={product.s3link}
+        src={product.thumbLink}
         alt={product.name}
         style={{ 
           width: "100%", 
-          height: "150px", 
+          height: "100px", 
           objectFit: "cover", 
           marginBottom: "0.5rem",
           border: "3px solid #181919ff",      // <-- Change border color and thickness
