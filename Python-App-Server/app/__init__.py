@@ -11,8 +11,10 @@ def create_app():
 
     app = Flask(__name__, template_folder='templates', static_folder='static')
 
+    CORS_WHITE_LIST_ADDRESS = os.getenv("CORS_WHITE_LIST")
+
     # CORS
-    CORS(app, origins=["http://localhost:3000"])
+    CORS(app, origins=[CORS_WHITE_LIST_ADDRESS])
 
     # Config
     app.config.from_object('app.config.Config')
