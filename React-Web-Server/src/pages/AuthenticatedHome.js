@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import ProductGrid from "../components/ProductGrid";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
+
 
 function AuthenticatedHome({ auth: propAuth }) {
-  const [products, setproducts] = useState([]);
+  const { allProducts, setAllProducts } = useOutletContext(); 
   const [loadingproducts, setLoadingproducts] = useState(true);
   const navigate = useNavigate();
   // No authentication logic
@@ -14,14 +15,14 @@ function AuthenticatedHome({ auth: propAuth }) {
     fetch(`${apiBaseUrl}/products`)
       .then((res) => res.json())
       .then((data) => {
-        setproducts(data);
+        setAllProducts(data);
         setLoadingproducts(false);
       })
       .catch((err) => {
         console.error("Failed to fetch products:", err);
         setLoadingproducts(false);
       });
-  }, []);
+  }, [setAllProducts]);
 
   // No authentication check
 
@@ -40,7 +41,7 @@ function AuthenticatedHome({ auth: propAuth }) {
         zIndex: 10
       }}>
       </div>
-      {loadingproducts ? <p>Loading available products...</p> : <ProductGrid products={products} />}
+      {loadingproducts ? <p>Loading available products...</p> : <ProductGrid products={allProducts} />}
     </div>
   );
 }
