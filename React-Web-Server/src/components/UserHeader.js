@@ -1,18 +1,16 @@
 import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 
-function UserHeader({ name, onSignOut, auth }) {
-  // Track which dropdown is open
+function UserHeader() {
   const [openDropdown, setOpenDropdown] = useState(null);
+  const { user, logout } = useAuth();
+
   const handleDropdown = (key) => {
     setOpenDropdown(openDropdown === key ? null : key);
   };
-  const firstName = auth?.user?.profile['custom:FirstName'];
-  const lastName = auth?.user?.profile['custom:LastName'];
-  const email = auth?.user?.profile?.email;
-  const userName = (firstName || lastName)
 
-    ? `${firstName || ''} ${lastName || ''}`.trim()
-    : (auth?.user?.profile.name || auth?.user?.profile.email);
+  const firstName = user?.attributes?.['custom:FirstName'];
+  const email = user?.attributes?.email;
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: "1.5rem" }}>
       <img
@@ -81,31 +79,109 @@ function UserHeader({ name, onSignOut, auth }) {
         </div>
       </nav>
       {/* Sign in button with user icon */}
-      <button
-        style={{
-          marginLeft: "auto",
-          marginTop: "1rem",
-          padding: "0.5rem 1.2rem",
-          backgroundColor: "#03b723",
-          color: "#fff",
-          border: "none",
-          borderRadius: "24px",
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          fontSize: "1rem",
-          transition: "background-color 0.2s"
-        }}
-        onMouseEnter={e => e.currentTarget.style.backgroundColor = "#04db2a"}
-        onMouseLeave={e => e.currentTarget.style.backgroundColor = "#03b723"}
-        onClick={() => {
-          window.location.href = "/login";
-        }}
-      >
-        <i className="fa fa-circle-user" style={{ fontSize: "1.2rem" }}></i>
-        {email ? email : "Log in"}
-      </button>
+      <div style={{ position: "relative" }}>
+        <button
+          style={{
+            marginLeft: "auto",
+            marginTop: "1rem",
+            padding: "0.5rem 1.2rem",
+            backgroundColor: "#03b723",
+            color: "#fff",
+            border: "none",
+            borderRadius: "24px",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            fontSize: "1rem",
+            transition: "background-color 0.2s"
+          }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = "#04db2a"}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = "#03b723"}
+          onClick={() => {
+            if (!user) {
+              window.location.href = "/login";
+            } else {
+              setOpenDropdown(openDropdown === 'user' ? null : 'user');
+            }
+          }}
+        >
+          <i className="fa fa-circle-user" style={{ fontSize: "1.2rem" }}></i>
+          {firstName ? (
+            <>
+              {firstName}
+              <i className="fa fa-chevron-down" style={{ fontSize: "0.8rem", marginLeft: "0.3rem" }}></i>
+            </>
+          ) : (
+            "Log in"
+          )}
+        </button>
+        {user && openDropdown === 'user' && (
+          <div
+            style={{
+              position: "absolute",
+              top: "calc(100% + 0.5rem)",
+              right: 0,
+              background: "#fff",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              borderRadius: "6px",
+              minWidth: "140px",
+              zIndex: 100
+            }}
+          >
+            <button
+              onClick={() => {
+                window.location.href = "/orders";
+                setOpenDropdown(null);
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                width: "100%",
+                padding: "0.5rem 1rem",
+                border: "none",
+                background: "none",
+                color: "#333",
+                cursor: "pointer",
+                textAlign: "left",
+                fontSize: "1rem",
+                borderBottom: "1px solid #eee"
+              }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = "#f5f5f5"}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
+            >
+              <i className="fa fa-shopping-bag" style={{ fontSize: "1rem" }}></i>
+              My Orders
+            </button>
+            <button
+              onClick={() => {
+                logout();
+                window.location.href = "/";
+                setOpenDropdown(null);
+              }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                width: "100%",
+                padding: "0.5rem 1rem",
+                border: "none",
+                background: "none",
+                color: "#333",
+                cursor: "pointer",
+                textAlign: "left",
+                fontSize: "1rem"
+              }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = "#f5f5f5"}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
+            >
+              <i className="fa fa-sign-out" style={{ fontSize: "1rem" }}></i>
+              Logout
+            </button>
+          </div>
+        )}
+      </div>
       <button
         style={{
           marginLeft: "1rem",

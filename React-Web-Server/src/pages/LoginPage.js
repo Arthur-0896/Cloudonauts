@@ -5,6 +5,7 @@ import {
   AuthenticationDetails,
 } from "amazon-cognito-identity-js";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 // Setup Cognito User Pool
 const poolData = {
@@ -15,6 +16,7 @@ const poolData = {
 const userPool = new CognitoUserPool(poolData);
 
 function LoginPage() {
+  const { login } = useAuth();
   const [form, setForm] = useState({ username: "", password: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -44,7 +46,52 @@ function LoginPage() {
       onSuccess: (result) => {
         console.log("Login success:", result);
         setSuccess(true);
-        setLoading(false);
+        
+        // Get user attributes after successful login
+        user.getUserAttributes(async (err, attributes) => {
+          if (err) {
+            console.error("Error getting user attributes:", err);
+            setLoading(false);
+            return;
+          }
+          
+          // Convert array of attributes to an object
+          const userAttributes = {};
+          if (Array.isArray(attributes)) {
+            attributes.forEach(attr => {
+              userAttributes[attr.Name] = attr.Value;
+            });
+          }
+          
+          // Track user in backend
+          try {
+            const response = await fetch('http://localhost:5000/users', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${result.getAccessToken().getJwtToken()}`
+              },
+              body: JSON.stringify({
+                sub: userAttributes.sub,
+                email: userAttributes.email,
+                name: userAttributes['custom:FirstName']
+              })
+            });
+            
+            if (!response.ok) {
+              console.error('Failed to track user:', await response.text());
+            }
+          } catch (err) {
+            console.error('Error tracking user:', err);
+          }
+
+          // Call login from AuthContext with user info
+          login({ cognitoUser: user, attributes: userAttributes });
+          
+          setLoading(false);
+          // Redirect to home page
+          window.location.href = "/";
+        });
       },
       onFailure: (err) => {
         console.error("Login failed:", err);

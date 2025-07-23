@@ -29,10 +29,10 @@ def track_user():
         return jsonify({"error": str(e)}), 401
 
 # Route to get all products ordered by a user
-@user_bp.route('/user-orders/<user_uid>', methods=['GET'])
-def get_user_orders(user_uid):
+@user_bp.route('/user-orders/<user_sub>', methods=['GET'])
+def get_user_orders(user_sub):
     try:
-        user = User.query.filter_by(uid=user_uid).first()
+        user = User.query.filter_by(sub=user_sub).first()
         if not user:
             return jsonify({"error": "User not found"}), 404
         orders_list = []
@@ -52,7 +52,8 @@ def get_user_orders(user_uid):
                         'gender': product.gender,
                         'productName': product.productName,
                         'size': product.size,
-                        'price': str(product.price)
+                        'price': str(product.price),
+                        'thumbLink': product.thumbLink
                     })
             orders_list.append(order_dict)
         return jsonify(orders_list)

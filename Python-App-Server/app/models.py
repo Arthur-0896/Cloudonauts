@@ -16,13 +16,19 @@ class Order(db.Model):
     Useruid = db.Column(db.Integer, db.ForeignKey('users.uid'), nullable=False)
 
     user = db.relationship('User', back_populates='orders')
-    products = db.relationship('Product', secondary='order_product', back_populates='orders')
+    order_products = db.relationship('OrderProduct', back_populates='order')
+    products = db.relationship('Product', secondary='order_product', viewonly=True)
 
 class OrderProduct(db.Model):
     __tablename__ = 'order_product'
 
-    oid = db.Column(db.Integer, db.ForeignKey('order.oid'), primary_key=True)
-    pid = db.Column(db.Integer, db.ForeignKey('product.pid'), primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
+    oid = db.Column(db.Integer, db.ForeignKey('order.oid'), nullable=False)
+    pid = db.Column(db.Integer, db.ForeignKey('product.pid'), nullable=False)
+    
+    # Add relationships to both Order and Product
+    order = db.relationship('Order', back_populates='order_products')
+    product = db.relationship('Product', back_populates='order_products')
 
 class Product(db.Model):
     __tablename__ = 'product'
@@ -37,4 +43,6 @@ class Product(db.Model):
     thumbLink = db.Column(db.String(255))
     inventory = db.Column(db.Integer)
 
-    orders = db.relationship('Order', secondary='order_product', back_populates='products')
+    # Update the relationship to use OrderProduct
+    order_products = db.relationship('OrderProduct', back_populates='product')
+    orders = db.relationship('Order', secondary='order_product', viewonly=True)

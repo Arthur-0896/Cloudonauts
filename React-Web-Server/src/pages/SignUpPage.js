@@ -56,12 +56,33 @@ function SignUpPage() {
       form.password,
       attributeList,
       null,
-      (err, result) => {
-        setLoading(false);
+      async (err, result) => {
         if (err) {
           setError(err.message || JSON.stringify(err));
+          setLoading(false);
         } else {
+          try {
+            // Track user in backend
+            const response = await fetch('http://localhost:5000/users', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                sub: result.userSub,
+                email: form.email,
+                name: form.firstName
+              })
+            });
+            
+            if (!response.ok) {
+              console.error('Failed to track user:', await response.text());
+            }
+          } catch (err) {
+            console.error('Error tracking user:', err);
+          }
           setSuccess(true);
+          setLoading(false);
         }
       }
     );
