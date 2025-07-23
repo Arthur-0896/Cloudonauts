@@ -8,7 +8,9 @@ function UserHeader({ name, onSignOut, auth }) {
   };
   const firstName = auth?.user?.profile['custom:FirstName'];
   const lastName = auth?.user?.profile['custom:LastName'];
+  const email = auth?.user?.profile?.email;
   const userName = (firstName || lastName)
+
     ? `${firstName || ''} ${lastName || ''}`.trim()
     : (auth?.user?.profile.name || auth?.user?.profile.email);
   return (
@@ -21,7 +23,6 @@ function UserHeader({ name, onSignOut, auth }) {
       {/* Dummy navbar */}
       <nav style={{ display: "flex", alignItems: "center", gap: "1rem", background: "#f5f5f5", padding: "0.5rem 1.5rem", borderRadius: "8px", justifyContent: "center", flex: 1 }}>
         <a href="/" style={{ textDecoration: "none", color: "#333", fontWeight: "normal", padding: "0.5rem 1rem", background: "none", border: "none", fontSize: "1rem", lineHeight: "1.5", display: "flex", alignItems: "center", height: "40px" }}>Home</a>
-        <a href="/signup" style={{ textDecoration: "none", color: "#333", fontWeight: "normal", padding: "0.5rem 1rem", background: "none", border: "none", fontSize: "1rem", lineHeight: "1.5", display: "flex", alignItems: "center", height: "40px" }}>Sign Up</a>
         {/* Men Dropdown */}
         <div
           style={{ position: "relative", height: "40px", display: "flex", alignItems: "center" }}
@@ -99,11 +100,11 @@ function UserHeader({ name, onSignOut, auth }) {
         onMouseEnter={e => e.currentTarget.style.backgroundColor = "#04db2a"}
         onMouseLeave={e => e.currentTarget.style.backgroundColor = "#03b723"}
         onClick={() => {
-          window.location.href = "/signup";
+          window.location.href = "/login";
         }}
       >
         <i className="fa fa-circle-user" style={{ fontSize: "1.2rem" }}></i>
-        {userName ? userName : "Sign in"}
+        {email ? email : "Log in"}
       </button>
     </div>
   );

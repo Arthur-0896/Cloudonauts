@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
 import {
   CognitoUserPool,
   CognitoUserAttribute
@@ -94,6 +96,9 @@ function SignUpPage() {
           <button type="submit" disabled={loading} style={{ backgroundColor: "#03b723", color: "#fff", padding: "0.5rem 1rem" }}>
             {loading ? "Signing Up..." : "Sign Up"}
           </button>
+          <p style={{ marginTop: "1rem" }}>
+        <Link to="/login">← Back to Log In</Link>
+      </p>
         </form>
       )}
       {error && <p style={{ color: "red" }}>{error}</p>}
