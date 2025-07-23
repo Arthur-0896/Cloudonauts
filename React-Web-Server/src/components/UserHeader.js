@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import Notification from "./Notification";
 
 function UserHeader() {
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [showLogoutNotification, setShowLogoutNotification] = useState(false);
   const { user, logout } = useAuth();
 
   const handleDropdown = (key) => {
@@ -157,8 +159,8 @@ function UserHeader() {
             <button
               onClick={() => {
                 logout();
-                window.location.href = "/";
                 setOpenDropdown(null);
+                setShowLogoutNotification(true);
               }}
               style={{
                 display: "flex",
@@ -207,9 +209,14 @@ function UserHeader() {
         <i className="fa fa-shopping-cart" style={{ fontSize: "1.2rem" }}></i>
         View Cart
       </button>
-
+      {showLogoutNotification && (
+        <Notification
+          message="You have logged out successfully"
+          onDismiss={() => setShowLogoutNotification(false)}
+          autoDismiss={3000}
+        />
+      )}
     </div>
-
   );
 }
 
