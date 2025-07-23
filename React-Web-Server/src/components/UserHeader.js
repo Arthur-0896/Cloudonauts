@@ -105,7 +105,34 @@ function UserHeader({ name, onSignOut, auth }) {
         <i className="fa fa-circle-user" style={{ fontSize: "1.2rem" }}></i>
         {userName ? userName : "Sign in"}
       </button>
+      <button
+        style={{
+          marginLeft: "1rem",
+          marginTop: "1rem",
+          padding: "0.5rem 1.2rem",
+          backgroundColor: "#0d9488",
+          color: "#fff",
+          border: "none",
+          borderRadius: "24px",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          fontSize: "1rem",
+          transition: "background-color 0.2s"
+        }}
+        onMouseEnter={e => e.currentTarget.style.backgroundColor = "#0f766e"}
+        onMouseLeave={e => e.currentTarget.style.backgroundColor = "#0d9488"}
+        onClick={() => {
+          window.location.href = "/cart";
+        }}
+      >
+        <i className="fa fa-shopping-cart" style={{ fontSize: "1.2rem" }}></i>
+        View Cart
+      </button>
+
     </div>
+
   );
 }
 

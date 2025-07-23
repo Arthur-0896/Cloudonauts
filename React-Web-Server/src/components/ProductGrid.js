@@ -1,4 +1,5 @@
 import React from "react";
+import Cookies from 'js-cookie';
 
 function ProductGrid({ products }) {
   console.log("Products:", products);
@@ -22,6 +23,8 @@ function ProductGrid({ products }) {
           padding: "2rem",
           backgroundColor: "#f4f6f8",
           borderRadius: "16px",
+          justifyContent: "center",
+          placeItems: "center", // Center single item
         }}
       >
         {products.map((product) => {
@@ -32,6 +35,8 @@ function ProductGrid({ products }) {
             <div
               key={product.pid}
               style={{
+                maxWidth: "300px",
+                width: "100%", // Prevent stretching
                 position: "relative",
                 backgroundColor: "#ffffff",
                 padding: "1.5rem",
@@ -44,18 +49,6 @@ function ProductGrid({ products }) {
                 filter: isOutOfStock ? "grayscale(70%)" : "none",
                 pointerEvents: isOutOfStock ? "none" : "auto",
                 opacity: isOutOfStock ? 0.7 : 1,
-              }}
-              onMouseEnter={(e) => {
-                if (!isOutOfStock) {
-                  e.currentTarget.style.transform = "scale(1.02)";
-                  e.currentTarget.style.boxShadow = "0 6px 16px rgba(0, 0, 0, 0.15)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isOutOfStock) {
-                  e.currentTarget.style.transform = "scale(1)";
-                  e.currentTarget.style.boxShadow = "0 4px 12px rgba(0, 0, 0, 0.1)";
-                }
               }}
             >
               <img
@@ -98,6 +91,7 @@ function ProductGrid({ products }) {
                     cursor: "pointer",
                     transition: "background-color 0.2s",
                   }}
+                  onClick={() => handleAddToCart(product.pid)}
                   onMouseEnter={(e) => {
                     e.target.style.backgroundColor = "#0f766e";
                   }}
@@ -105,7 +99,7 @@ function ProductGrid({ products }) {
                     e.target.style.backgroundColor = "#0d9488";
                   }}
                 >
-                  View Details
+                  Add to Cart
                 </button>
               )}
 
@@ -137,6 +131,26 @@ function ProductGrid({ products }) {
       </div>
     </div>
   );
+}
+
+function handleAddToCart(productId) {
+  // Get existing cart from cookies
+  const existingCart = Cookies.get('cart');
+  let cart = [];
+
+  if (existingCart) {
+    cart = JSON.parse(existingCart);
+  }
+
+  // Avoid duplicates
+  if (!cart.includes(productId)) {
+    cart.push(productId);
+    Cookies.set('cart', JSON.stringify(cart), { expires: 7 }); // store for 7 days
+    alert('Item added to cart!');
+  } else {
+    alert('Item already in cart.');
+    console.log("Here is the cookies",Cookies.get('cart'));
+  }
 }
 
 export default ProductGrid;
