@@ -107,7 +107,7 @@ function OrdersPage() {
                       <p style={{ margin: "0.2rem 0" }}>Category: {product.category}</p>
                       <p style={{ margin: "0.2rem 0" }}>Gender: {product.gender}</p>
                       <p style={{ margin: "0.2rem 0" }}>Size: {product.size}</p>
-                      <p style={{ margin: "0.2rem 0", fontWeight: "bold" }}>Price: ${product.price}</p>
+                      <p style={{ margin: "0.2rem 0", fontWeight: "bold" }}>Price: <span style={{ color: "#28a745" }}>${product.price}</span></p>
                     </div>
                   </div>
                 </div>
@@ -132,7 +132,7 @@ function OrdersPage() {
                 gap: "0.5rem"
               }}>
                 <span style={{ fontSize: "1.1rem", color: "#666" }}>Order Total:</span>
-                <span>${order.products.reduce((total, product) => total + parseFloat(product.price), 0).toFixed(2)}</span>
+                <span style={{ color: "#28a745" }}>${order.products.reduce((total, product) => total + parseFloat(product.price), 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
