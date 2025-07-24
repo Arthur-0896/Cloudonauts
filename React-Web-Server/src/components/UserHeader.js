@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext"; // Ensure correct path to AuthContext
+import { useAuth } from "../context/AuthContext";
 import Notification from "./Notification";
 // No need to import Cookies here for cart count as it's handled in AuthContext
 
@@ -16,6 +16,24 @@ function UserHeader() {
   const handleDropdown = (key) => {
     setOpenDropdown(openDropdown === key ? null : key);
   };
+
+  // Handle click outside of user dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const userDropdown = document.querySelector('.user-dropdown-container');
+      if (userDropdown && !userDropdown.contains(event.target)) {
+        setOpenDropdown(null);
+      }
+    };
+
+    if (openDropdown === 'user') {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openDropdown]);
 
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: "1.5rem" }}>
@@ -127,7 +145,7 @@ function UserHeader() {
       {/* USER BUTTON */}
       <div style={{ display: "flex", alignItems: "center", marginTop: "1rem", gap: "0.5rem" }}>
         {/* LOGIN BUTTON */}
-        <div style={{ position: "relative" }}>
+        <div className="user-dropdown-container" style={{ position: "relative" }}>
           <button
             style={{
               backgroundColor: "#03b723",
@@ -137,13 +155,13 @@ function UserHeader() {
               cursor: "pointer",
               display: "flex",
               alignItems: "center",
-              justifyContent: user ? "center" : "flex-start",
+              justifyContent: "flex-start",
               fontSize: "1rem",
               transition: "background-color 0.2s",
-              width: user ? "44px" : "106px",
+              width: user ? "auto" : "106px",
               height: "44px",
-              padding: user ? 0 : "0 1rem",
-              gap: user ? 0 : "0.5rem",
+              padding: "0 1rem",
+              gap: "0.5rem",
               userSelect: "none",
             }}
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#04db2a")}
@@ -160,18 +178,20 @@ function UserHeader() {
             <i
               className="fa fa-circle-user"
               style={{
-                fontSize: user ? "1.4rem" : "1.2rem",
-                marginLeft: user ? 0 : "0.2rem",
+                fontSize: "1.2rem",
+                marginLeft: "0.2rem",
               }}
             ></i>
 
             {!user && "Log in"}
-
             {user && (
-              <i
-                className="fa fa-chevron-down"
-                style={{ fontSize: "0.8rem", marginLeft: "0.3rem" }}
-              ></i>
+              <>
+                <span style={{ marginLeft: "0.3rem" }}>{firstName}</span>
+                <i
+                  className="fa fa-chevron-down"
+                  style={{ fontSize: "0.8rem", marginLeft: "0.3rem" }}
+                ></i>
+              </>
             )}
           </button>
 
@@ -299,7 +319,7 @@ function UserHeader() {
         <Notification
           message="You have logged out successfully"
           onDismiss={() => setShowLogoutNotification(false)}
-          autoDismiss={3000}
+          autoDismiss={2500}
         />
       )}
     </div>

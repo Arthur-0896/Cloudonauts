@@ -16,3 +16,11 @@ Python-App-Server/app/routes/__pycache__/__init__.cpython-313.pyc
 Python-App-Server/app/routes/__pycache__/admin_routes.cpython-313.pyc
 Python-App-Server/app/routes/__pycache__/user_routes.cpython-313.pyc
 Python-App-Server/app/__pycache__/models.cpython-313.pyc
+Python-App-Server/app/__pycache__/__init__.cpython-313.pyc
+Python-App-Server/app/__pycache__/config.cpython-313.pyc
+Python-App-Server/app/__pycache__/models.cpython-313.pyc
+Python-App-Server/app/auth/__pycache__/__init__.cpython-313.pyc
+Python-App-Server/app/auth/__pycache__/token_verify.cpython-313.pyc
+Python-App-Server/app/routes/__pycache__/__init__.cpython-313.pyc
+Python-App-Server/app/routes/__pycache__/admin_routes.cpython-313.pyc
+Python-App-Server/app/routes/__pycache__/user_routes.cpython-313.pyc

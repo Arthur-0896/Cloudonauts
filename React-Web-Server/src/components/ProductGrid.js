@@ -1,10 +1,36 @@
+import React, { useState } from 'react';
 import Cookies from 'js-cookie';
 import { useAuth } from '../context/AuthContext'; // Ensure correct path to AuthContext
+import Notification from './Notification';
 
 function ProductGrid({ products }) {
   const { updateCartCount } = useAuth(); // Get updateCartCount from AuthContext
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [itemsInCart, setItemsInCart] = useState([]);
 
-  const handleAddToCart = (productId) => {
+  // Initialize items in cart from cookies
+  React.useEffect(() => {
+    const existingCart = Cookies.get('cart');
+    if (existingCart) {
+      setItemsInCart(JSON.parse(existingCart));
+    }
+  }, []);
+
+  const handleRemoveFromCart = (productId, productName) => {
+    const existingCart = Cookies.get('cart');
+    if (existingCart) {
+      const cart = JSON.parse(existingCart);
+      const updatedCart = cart.filter(id => id !== productId);
+      Cookies.set('cart', JSON.stringify(updatedCart), { expires: 7 });
+      setItemsInCart(updatedCart);
+      setNotificationMessage(`${productName} removed from cart`);
+      setShowNotification(true);
+      updateCartCount();
+    }
+  };
+
+  const handleAddToCart = (productId, productName) => {
     let cart = [];
     const existingCart = Cookies.get('cart'); // Get 'cart' cookie
     if (existingCart) { // If cart exists in cookies
@@ -13,16 +39,20 @@ function ProductGrid({ products }) {
     if (!cart.includes(productId)) { // If product is not already in cart
       cart.push(productId); // Add product ID to cart
       Cookies.set('cart', JSON.stringify(cart), { expires: 7 }); // Set updated cart in cookies
-      alert('Item added to cart!');
+      setItemsInCart(cart); // Update local state
+      setNotificationMessage(`${productName} added to cart successfully`);
+      setShowNotification(true);
       updateCartCount(); // Call to update the cart count in UserHeader via AuthContext
     } else {
-      alert('Item already in cart.');
+      setNotificationMessage('Item already in cart');
+      setShowNotification(true);
     }
   };
 
   return (
-    <div style={styles.gridContainer}>
-      {products.map((product) => {
+    <div>
+      <div style={styles.gridContainer}>
+        {products.map((product) => {
         const price = parseFloat(product.price);
         const isOutOfStock = product.inventory === 0;
 
@@ -59,17 +89,34 @@ function ProductGrid({ products }) {
             {!isOutOfStock && (
               <div style={styles.buttonWrapper}>
                 <button
-                  onClick={() => handleAddToCart(product.pid)}
-                  style={styles.addToCartButton}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.backgroundColor = "#04db2a")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.backgroundColor = "#03b723")
-                  }
-                  title="Add to Cart"
+                  onClick={() => {
+                    if (itemsInCart.includes(product.pid)) {
+                      handleRemoveFromCart(product.pid, product.productName);
+                    } else {
+                      handleAddToCart(product.pid, product.productName);
+                    }
+                  }}
+                  style={{
+                    ...styles.addToCartButton,
+                    ...(itemsInCart.includes(product.pid) && styles.removeButton)
+                  }}
+                  onMouseEnter={(e) => {
+                    if (itemsInCart.includes(product.pid)) {
+                      e.currentTarget.style.backgroundColor = "#cc0000"
+                    } else {
+                      e.currentTarget.style.backgroundColor = "#04db2a"
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (itemsInCart.includes(product.pid)) {
+                      e.currentTarget.style.backgroundColor = "#ff0000"
+                    } else {
+                      e.currentTarget.style.backgroundColor = "#03b723"
+                    }
+                  }}
+                  title={itemsInCart.includes(product.pid) ? "Remove from Cart" : "Add to Cart"}
                 >
-                  Add to Cart
+                  {itemsInCart.includes(product.pid) ? "Remove" : "Add to Cart"}
                 </button>
               </div>
             )}
@@ -81,13 +128,21 @@ function ProductGrid({ products }) {
           </div>
         );
       })}
+      </div>
+      {showNotification && (
+        <Notification
+          message={notificationMessage}
+          onDismiss={() => setShowNotification(false)}
+          type="success"
+          autoDismiss={1700}
+        />
+      )}
     </div>
   );
 }
 
 // ✨ CSS-in-JS styles
 const styles = {
-
   gridContainer: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
@@ -156,7 +211,12 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "0.5rem",
-    transition: "background-color 0.2s",
+    transition: "all 0.2s",
+  },
+  removeButton: {
+    backgroundColor: "#ff0000",
+    color: "#fff",
+    cursor: "pointer",
   },
 
 

@@ -7,7 +7,6 @@ function AuthenticatedHome({ auth: propAuth }) {
   
   const { allProducts, setAllProducts } = useOutletContext();
   const [loadingproducts, setLoadingproducts] = useState(true);
-  const navigate = useNavigate();
   // No authentication logic
 
   useEffect(() => {
