@@ -237,7 +237,7 @@ function UserHeader() {
                 onClick={() => {
                   logout();
                   setOpenDropdown(null);
-                  setShowLogoutNotification(true);
+                  window.location.href = '/?logout=true';
                 }}
                 style={{
                   display: "flex",
@@ -314,14 +314,6 @@ function UserHeader() {
         </div>
       </div>
 
-      {/* Logout Notification */}
-      {showLogoutNotification && (
-        <Notification
-          message="You have logged out successfully"
-          onDismiss={() => setShowLogoutNotification(false)}
-          autoDismiss={2500}
-        />
-      )}
     </div>
   );
 }

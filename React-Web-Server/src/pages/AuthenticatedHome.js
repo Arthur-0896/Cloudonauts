@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ProductGrid from "../components/ProductGrid";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext, useSearchParams } from "react-router-dom";
+import Notification from "../components/Notification";
 
 
 function AuthenticatedHome({ auth: propAuth }) {
@@ -25,10 +26,28 @@ function AuthenticatedHome({ auth: propAuth }) {
       });
   }, [setAllProducts]);
 
-  // No authentication check
+  const [searchParams] = useSearchParams();
+  const [showLogoutNotification, setShowLogoutNotification] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('logout') === 'true') {
+      setShowLogoutNotification(true);
+      // Remove the logout parameter from URL without refreshing the page
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [searchParams]);
 
   return (
-    <div style={{
+    <>
+      {showLogoutNotification && (
+        <Notification
+          message="You have logged out successfully"
+          onDismiss={() => setShowLogoutNotification(false)}
+          autoDismiss={2500}
+        />
+      )}
+      <div style={{
       padding: "2rem",
       fontFamily: "Arial",
       position: "relative",
@@ -45,6 +64,7 @@ function AuthenticatedHome({ auth: propAuth }) {
       </div>
       {loadingproducts ? <p>Loading available products...</p> : <ProductGrid products={allProducts} />}
     </div>
+    </>
   );
 }
 
