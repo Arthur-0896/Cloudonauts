@@ -4,7 +4,8 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 
 
 function AuthenticatedHome({ auth: propAuth }) {
-  const { allProducts, setAllProducts } = useOutletContext(); 
+  
+  const { allProducts, setAllProducts } = useOutletContext();
   const [loadingproducts, setLoadingproducts] = useState(true);
   const navigate = useNavigate();
   // No authentication logic
@@ -16,6 +17,7 @@ function AuthenticatedHome({ auth: propAuth }) {
       .then((res) => res.json())
       .then((data) => {
         setAllProducts(data);
+        localStorage.setItem("allProducts", JSON.stringify(data));  // <--- save here
         setLoadingproducts(false);
       })
       .catch((err) => {
@@ -27,12 +29,13 @@ function AuthenticatedHome({ auth: propAuth }) {
   // No authentication check
 
   return (
-    <div style={{ 
-      padding: "2rem", 
-      fontFamily: "Arial", 
-      position: "relative", 
+    <div style={{
+      padding: "2rem",
+      fontFamily: "Arial",
+      position: "relative",
       minHeight: "100vh",
-      backgroundColor: "#B6EDFD"}}>
+      backgroundColor: "#B6EDFD"
+    }}>
       {/* UserHeader removed to prevent duplicate header */}
       <div style={{
         position: "absolute",

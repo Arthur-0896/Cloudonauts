@@ -10,12 +10,14 @@ function Cart() {
 
   const loadCartItems = () => {
     const cart = JSON.parse(Cookies.get("cart") || "[]");
+    console.log("Here are the cart items", cart);
     const savedProducts = JSON.parse(localStorage.getItem("allProducts") || "[]");
-
+    console.log("Here are the all items", localStorage.getItem("allProducts"));
     const cartIdsNormalized = cart.map(String);
     const filtered = savedProducts.filter(product =>
       cartIdsNormalized.includes(String(product.pid))
     );
+    console.log("Here are the filtered items", filtered);
     setCartItems(filtered);
   };
 

@@ -1,4 +1,4 @@
-import React from "react";
+
 import Cookies from 'js-cookie';
 
 function ProductGrid({ products }) {
@@ -8,7 +8,6 @@ function ProductGrid({ products }) {
     if (existingCart) {
       cart = JSON.parse(existingCart);
     }
-
     if (!cart.includes(productId)) {
       cart.push(productId);
       Cookies.set('cart', JSON.stringify(cart), { expires: 7 });
@@ -47,45 +46,32 @@ function ProductGrid({ products }) {
               <span style={{ fontWeight: "500", color: "#555" }}>Size:</span>{" "}
               {product.size || "No size available."}
             </p>
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginTop: "1rem",
-              width: "100%",
-              padding: "0 0.5rem",
-            }}>
-              <strong style={{
-                fontSize: "1rem",
-                color: "#333",
-              }}>
+
+            <p style={styles.price}>
+              <strong>
                 {!isNaN(price) ? `$${price.toFixed(2)}` : "Price not available"}
               </strong>
+            </p>
 
-              {!isOutOfStock && (
+            {!isOutOfStock && (
+              <div style={styles.buttonWrapper}>
                 <button
                   onClick={() => handleAddToCart(product.pid)}
-                  style={{
-                    backgroundColor: "#0d9488",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "8px",
-                    padding: "0.5rem 0.8rem",
-                    fontSize: "1.2rem",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transition: "background-color 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = "#0f766e"}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = "#0d9488"}
+                  style={styles.addToCartButton}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#04db2a")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#03b723")
+                  }
                   title="Add to Cart"
                 >
-                  🛒
+                  Add to Cart
                 </button>
-              )}
-            </div>
+              </div>
+            )}
+
+
             {isOutOfStock && (
               <div style={styles.outOfStockOverlay}>Out of Stock</div>
             )}
@@ -147,7 +133,30 @@ const styles = {
     marginTop: "0.5rem",
     fontSize: "1rem",
     color: "#334155",
+    fontWeight: "bold", // Make it bold
   },
+
+  buttonWrapper: {
+    marginTop: "0.8rem",
+    display: "flex",
+    justifyContent: "center",
+  },
+
+  addToCartButton: {
+    backgroundColor: "#03b723",
+    color: "#fff",
+    border: "none",
+    borderRadius: "24px",
+    padding: "0.5rem 1.2rem",
+    fontSize: "1rem",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    transition: "background-color 0.2s",
+  },
+
+
   button: {
     marginTop: "1rem",
     padding: "0.5rem 1rem",
