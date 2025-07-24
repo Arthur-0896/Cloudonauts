@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
-from app.models import User, Product
+from app.models import User, Product, Order, OrderProduct
 from app import db
-from app.models import User
 from app.auth.token_verify import verify_token
 import traceback
 
@@ -28,37 +27,7 @@ def track_user():
         traceback.print_exc()
         return jsonify({"error": str(e)}), 401
 
-# Route to get all products ordered by a user
-@user_bp.route('/user-orders/<user_sub>', methods=['GET'])
-def get_user_orders(user_sub):
-    try:
-        user = User.query.filter_by(sub=user_sub).first()
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-        orders_list = []
-        from app.models import OrderProduct, Product
-        for order in user.orders:
-            order_dict = {
-                'order_id': order.oid,
-                'products': []
-            }
-            order_products = OrderProduct.query.filter_by(oid=order.oid).all()
-            for op in order_products:
-                product = Product.query.filter_by(pid=op.pid).first()
-                if product:
-                    order_dict['products'].append({
-                        'pid': product.pid,
-                        'category': product.category,
-                        'gender': product.gender,
-                        'productName': product.productName,
-                        'size': product.size,
-                        'price': str(product.price),
-                        'thumbLink': product.thumbLink
-                    })
-            orders_list.append(order_dict)
-        return jsonify(orders_list)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+
 
 @user_bp.route('/health', methods=['GET'])
 def health_check():

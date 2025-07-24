@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from "react";
 import Cookies from "js-cookie";
-import { useAuth } from "../context/AuthContext"; // Ensure correct path to AuthContext
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import Notification from "../components/Notification";
 
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
-  const { updateCartCount } = useAuth(); // Get updateCartCount from AuthContext
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const { updateCartCount, user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadCartItems();
@@ -32,8 +37,44 @@ function Cart() {
     loadCartItems(); // Refresh UI and also updates cart count via updateCartCount() call inside
   };
 
-  const handleBuyNow = () => {
-    alert(`Proceeding to buy ${cartItems.length} item(s)!`);
+  const handleBuyNow = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      if (!user) {
+        setError("Please login to place an order");
+        return;
+      }
+
+      const response = await fetch('http://localhost:5000/place-order', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_sub: user.attributes.sub,
+          products: cartItems.map(item => item.pid)
+        })
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to place order');
+      }
+
+      // Clear cart
+      Cookies.set('cart', '[]', { expires: 7 });
+      updateCartCount();
+
+      // Navigate to order confirmation with the order ID
+      navigate(`/order-confirmation/${data.order_id}`);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -67,10 +108,33 @@ function Cart() {
             ))}
           </ul>
 
-          <button style={styles.buyNowButton} onClick={handleBuyNow}>
-            Buy Now
-          </button>
+          <div style={styles.buttonContainer}>
+            <button 
+              style={styles.continueShoppingButton}
+              onClick={() => navigate('/')}
+            >
+              Continue Shopping
+            </button>
+            <button 
+              style={{
+                ...styles.buyNowButton,
+                ...(isLoading && styles.buttonDisabled)
+              }} 
+              onClick={handleBuyNow}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Processing...' : 'Buy Now'}
+            </button>
+          </div>
         </>
+      )}
+      {error && (
+        <Notification
+          message={error}
+          type="error"
+          onDismiss={() => setError(null)}
+          autoDismiss={5000}
+        />
       )}
     </div>
   );
@@ -148,9 +212,24 @@ const styles = {
     fontSize: "0.9rem",
     marginLeft: "1rem",
   },
-  buyNowButton: {
+  buttonContainer: {
     marginTop: "2rem",
-    width: "100%",
+    display: "flex",
+    gap: "1rem",
+  },
+  continueShoppingButton: {
+    flex: 1,
+    padding: "1rem",
+    backgroundColor: "#fff",
+    color: "#0d9488",
+    border: "2px solid #0d9488",
+    borderRadius: "12px",
+    fontSize: "1.2rem",
+    cursor: "pointer",
+    transition: "all 0.3s",
+  },
+  buyNowButton: {
+    flex: 1,
     padding: "1rem",
     backgroundColor: "#0d9488",
     color: "#fff",
@@ -158,7 +237,12 @@ const styles = {
     borderRadius: "12px",
     fontSize: "1.2rem",
     cursor: "pointer",
-    transition: "background-color 0.3s",
+    transition: "all 0.3s",
+  },
+  buttonDisabled: {
+    backgroundColor: "#94a3b8",
+    cursor: "not-allowed",
+    opacity: 0.7,
   },
 };
 

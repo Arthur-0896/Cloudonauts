@@ -1,6 +1,7 @@
 // routes/AppRoutes.js
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import OrderConfirmation from '../pages/OrderConfirmation';
 import App from "../App";
 import AuthenticatedHome from "../pages/AuthenticatedHome";
 import AddProductForm from "../pages/AddProductForm";
@@ -17,7 +18,8 @@ function AppRoutes() {
         <Route path="add-product" element={<AddProductForm />} />
         <Route path="signup" element={<SignUpPage />} />
         <Route path="login" element={<LoginPage />} />
-        <Route path="cart" element={<Cart />} />
+                  <Route path="/cart" element={<Cart />} />
+          <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
         <Route path="orders" element={<OrdersPage />} />
       </Route>
     </Routes>
