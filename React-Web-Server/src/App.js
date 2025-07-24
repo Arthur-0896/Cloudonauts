@@ -28,7 +28,7 @@ function App() {
   return (
     <AuthProvider>
       <div style={{ fontFamily: "Arial" }}>
-        <UserHeader cartCount={cart.length} />
+        <UserHeader />
         <Outlet context={{ allProducts, setAllProducts }} />
       </div>
     </AuthProvider>

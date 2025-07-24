@@ -1,32 +1,35 @@
 import React, { useEffect, useState } from "react";
 import Cookies from "js-cookie";
+import { useAuth } from "../context/AuthContext"; // Ensure correct path to AuthContext
 
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
+  const { updateCartCount } = useAuth(); // Get updateCartCount from AuthContext
 
   useEffect(() => {
     loadCartItems();
   }, []);
 
   const loadCartItems = () => {
-    const cart = JSON.parse(Cookies.get("cart") || "[]");
+    const cart = JSON.parse(Cookies.get("cart") || "[]"); // Get and parse 'cart' cookie
     console.log("Here are the cart items", cart);
-    const savedProducts = JSON.parse(localStorage.getItem("allProducts") || "[]");
+    const savedProducts = JSON.parse(localStorage.getItem("allProducts") || "[]"); // Get and parse 'allProducts' from local storage
     console.log("Here are the all items", localStorage.getItem("allProducts"));
-    const cartIdsNormalized = cart.map(String);
+    const cartIdsNormalized = cart.map(String); // Normalize cart IDs to strings
     const filtered = savedProducts.filter(product =>
-      cartIdsNormalized.includes(String(product.pid))
+      cartIdsNormalized.includes(String(product.pid)) // Filter products to match cart IDs
     );
     console.log("Here are the filtered items", filtered);
-    setCartItems(filtered);
+    setCartItems(filtered); // Set filtered cart items
+    updateCartCount(); // Update cart count after loading cart items
   };
 
   const handleRemove = (pidToRemove) => {
-    let cart = JSON.parse(Cookies.get("cart") || "[]");
-    cart = cart.filter(pid => String(pid) !== String(pidToRemove));
+    let cart = JSON.parse(Cookies.get("cart") || "[]"); // Get and parse 'cart' cookie
+    cart = cart.filter(pid => String(pid) !== String(pidToRemove)); // Filter out the item to remove
 
-    Cookies.set("cart", JSON.stringify(cart), { expires: 7 });
-    loadCartItems(); // Refresh UI
+    Cookies.set("cart", JSON.stringify(cart), { expires: 7 }); // Update cart cookie
+    loadCartItems(); // Refresh UI and also updates cart count via updateCartCount() call inside
   };
 
   const handleBuyNow = () => {

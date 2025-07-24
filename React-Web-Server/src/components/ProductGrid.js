@@ -1,17 +1,20 @@
-
 import Cookies from 'js-cookie';
+import { useAuth } from '../context/AuthContext'; // Ensure correct path to AuthContext
 
 function ProductGrid({ products }) {
+  const { updateCartCount } = useAuth(); // Get updateCartCount from AuthContext
+
   const handleAddToCart = (productId) => {
     let cart = [];
-    const existingCart = Cookies.get('cart');
-    if (existingCart) {
-      cart = JSON.parse(existingCart);
+    const existingCart = Cookies.get('cart'); // Get 'cart' cookie
+    if (existingCart) { // If cart exists in cookies
+      cart = JSON.parse(existingCart); // Parse the cart data
     }
-    if (!cart.includes(productId)) {
-      cart.push(productId);
-      Cookies.set('cart', JSON.stringify(cart), { expires: 7 });
+    if (!cart.includes(productId)) { // If product is not already in cart
+      cart.push(productId); // Add product ID to cart
+      Cookies.set('cart', JSON.stringify(cart), { expires: 7 }); // Set updated cart in cookies
       alert('Item added to cart!');
+      updateCartCount(); // Call to update the cart count in UserHeader via AuthContext
     } else {
       alert('Item already in cart.');
     }

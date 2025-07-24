@@ -1,29 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContext"; // Ensure correct path to AuthContext
 import Notification from "./Notification";
-import Cookies from "js-cookie";
+// No need to import Cookies here for cart count as it's handled in AuthContext
 
-function UserHeader({ cartCount }) {
+function UserHeader() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [showLogoutNotification, setShowLogoutNotification] = useState(false);
-  const [cartCount, setCartCount] = useState(0);
-  const { user, logout } = useAuth();
+  const { user, logout, cartCount } = useAuth(); // Get cartCount from AuthContext
 
   const firstName = user?.attributes?.["custom:FirstName"];
   const email = user?.attributes?.email;
 
-  // Load cart count from cookies on mount
-  useEffect(() => {
-    const existingCart = Cookies.get("cart");
-    if (existingCart) {
-      try {
-        const parsed = JSON.parse(existingCart);
-        setCartCount(parsed.length);
-      } catch {
-        setCartCount(0);
-      }
-    }
-  }, []);
+  // No need for the useEffect for cartCount here anymore, it's managed by AuthContext
 
   const handleDropdown = (key) => {
     setOpenDropdown(openDropdown === key ? null : key);
