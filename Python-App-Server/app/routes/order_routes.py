@@ -3,10 +3,26 @@ from app.models import User, Product, Order, OrderProduct
 from app import db
 from app.auth.token_verify import verify_token
 import traceback
+import boto3 # Import boto3 for AWS SDK
+import os    # For environment variables
 
 order_bp = Blueprint('order_bp', __name__)
 
-# Route to get all products ordered by a user
+# Initialize AWS Lambda client
+# It's good practice to get the region from environment variables
+# For local development, you might hardcode it or configure AWS CLI credentials
+lambda_client = boto3.client(
+    'lambda',
+    region_name=os.environ.get('AWS_REGION', 'us-east-1'), # Replace 'us-east-1' with your desired region
+    aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),      # Ensure these are set in your environment
+    aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY') # For production, use IAM roles with instance profiles
+)
+
+# Replace with the actual name of your Lambda function
+# This should match the name you gave it in the AWS Lambda console (e.g., OrderConfirmationEmailSender)
+LAMBDA_FUNCTION_NAME = os.environ.get('LAMBDA_ORDER_CONFIRMATION_NAME', 'OrderConfirmationEmailSender')
+
+# Route to get all products ordered by a user (no change here)
 @order_bp.route('/user-orders/<user_sub>', methods=['GET'])
 def get_user_orders(user_sub):
     try:
@@ -35,6 +51,7 @@ def get_user_orders(user_sub):
             orders_list.append(order_dict)
         return jsonify(orders_list)
     except Exception as e:
+        traceback.print_exc() # Print full traceback for debugging
         return jsonify({"error": str(e)}), 500
 
 @order_bp.route('/place-order', methods=['POST'])
@@ -55,37 +72,76 @@ def place_order():
         # Create new order
         new_order = Order(Useruid=user.uid)
         db.session.add(new_order)
-        db.session.flush()  # This gets us the new order ID
+        db.session.flush()  # This gets us the new order ID before commit
+
+        # Prepare product details for the email (optional, but good for detailed emails)
+        ordered_products_details = []
 
         # Add all products to the order
         for pid in product_ids:
-            # Verify product exists
             product = Product.query.get(pid)
             if not product:
                 db.session.rollback()
                 return jsonify({"error": f"Product with ID {pid} not found"}), 404
             
-            # Check inventory
             if product.inventory <= 0:
                 db.session.rollback()
                 return jsonify({"error": f"Product {product.productName} is out of stock"}), 400
 
-            # Create order product mapping
             order_product = OrderProduct(oid=new_order.oid, pid=pid)
             db.session.add(order_product)
-
-            # Update inventory
             product.inventory -= 1
 
-        # Commit the transaction
+            ordered_products_details.append({
+                'pid': product.pid,
+                'productName': product.productName,
+                'price': str(product.price), # Convert Decimal to string for JSON
+                'thumbLink': product.thumbLink
+            })
+
+        # Commit the transaction to save order and product updates
         db.session.commit()
 
+        # --- IMPORTANT: Trigger the Lambda function AFTER successful commit ---
+        try:
+            # Construct the payload for the Lambda function
+            lambda_payload = {
+                'orderId': new_order.oid,
+                'customerEmail': user.email, # Assuming your User model has an 'email' field
+                'customerName': user.username, # Assuming your User model has a 'username' field
+                'products': ordered_products_details # Include product details
+            }
+            
+            # Invoke the Lambda function asynchronously (InvocationType='Event')
+            # 'Event' means Lambda processes it in the background, without waiting for a response.
+            # This is ideal for tasks like sending emails where your API doesn't need to wait.
+            response = lambda_client.invoke(
+                FunctionName=LAMBDA_FUNCTION_NAME,
+                InvocationType='Event', # 'RequestResponse' for synchronous, 'Event' for asynchronous
+                Payload=json.dumps(lambda_payload)
+            )
+            
+            print(f"Lambda invocation response: {response}")
+            # Check for errors in the invocation response (though for 'Event' type, it's mostly about validation)
+            if response.get('StatusCode') != 202: # 202 Accepted for 'Event' invocation
+                print(f"Warning: Lambda invocation might have failed. Status Code: {response.get('StatusCode')}")
+                # You might log this error to a monitoring system
+            
+        except Exception as lambda_err:
+            print(f"Error invoking Lambda function {LAMBDA_FUNCTION_NAME}: {lambda_err}")
+            traceback.print_exc()
+            # Decide if you want to fail the order if email fails.
+            # For confirmation emails, usually, we don't, as the order is already placed.
+            # You might log this error and have a retry mechanism.
+
+
+        # Your API response to the frontend
         return jsonify({
-            "message": "Order placed successfully",
+            "message": "Order placed successfully. Confirmation email is being sent.",
             "order_id": new_order.oid
         }), 201
 
     except Exception as e:
         db.session.rollback()
-        traceback.print_exc()
+        traceback.print_exc() # Print full traceback for debugging
         return jsonify({"error": str(e)}), 500
