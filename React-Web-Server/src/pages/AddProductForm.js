@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import Notification from "../components/Notification";
 
 function AddProductForm() {
   const [formData, setFormData] = useState({
@@ -11,6 +12,8 @@ function AddProductForm() {
   });
 
   const [imageFile, setImageFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [notification, setNotification] = useState({ show: false, message: '', type: 'info' });
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -51,42 +54,71 @@ function AddProductForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Prepare JSON payload (no image for backend API)
-  const payload = {
-    category: formData.category,
-    gender: formData.gender,
-    productName: formData.productName,
-    size: formData.size,
-    price: parseFloat(formData.price),
-    count: parseInt(formData.count, 10)
-  };
-    // const payload = new FormData();
-    // for (const key in formData) payload.append(key, formData[key]);
-    // if (imageFile) payload.append("image", imageFile);
+    setIsUploading(true);
 
     try {
+      const formDataToSend = new FormData();
+      
+      // Add all product data to FormData
+      formDataToSend.append('category', formData.category);
+      formDataToSend.append('gender', formData.gender);
+      formDataToSend.append('productName', formData.productName);
+      formDataToSend.append('size', formData.size);
+      formDataToSend.append('price', formData.price);
+      formDataToSend.append('count', formData.count);
+
+      // Add image if one was selected
+      if (imageFile) {
+        formDataToSend.append('image', imageFile);
+      }
+
       const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
-      const res = await fetch(`${apiBaseUrl}/add-product`, {
+      
+      // Send everything to Python backend
+      const response = await fetch(`${apiBaseUrl}/add-product`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: formDataToSend  // Don't set Content-Type header, let browser set it with boundary
       });
 
-      const result = await res.json();
-      if (res.ok) {
-        alert("Product is Added");
-        window.location.href = "/";
-      } else {
-        alert(result.error || "Failed to add product");
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to add product");
       }
+
+      setNotification({
+        show: true,
+        message: "Product added successfully!",
+        type: "success"
+      });
+
+      // Redirect after a short delay to show the success message
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 2000);
+
     } catch (err) {
-      alert("Failed to add product");
       console.error(err);
+      setNotification({
+        show: true,
+        message: err.message || "Failed to add product",
+        type: "error"
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
   return (
     <div style={{ padding: "0rem", maxWidth: "600px", margin: "auto" }}>
+      {notification.show && (
+        <Notification
+          message={notification.message}
+          type={notification.type}
+          onDismiss={() => setNotification({ ...notification, show: false })}
+          autoDismiss={3000}
+        />
+      )}
       <h2>Add New Product</h2>
       <form onSubmit={handleSubmit} encType="multipart/form-data">
         {["category", "gender", "productName", "size", "price", "count"].map((field) => (
@@ -134,9 +166,18 @@ function AddProductForm() {
 
         <button
           type="submit"
-          style={{ backgroundColor: "green", color: "white", padding: "0.5rem 1rem" }}
+          disabled={isUploading}
+          style={{
+            backgroundColor: isUploading ? "#cccccc" : "green",
+            color: "white",
+            padding: "0.5rem 1rem",
+            cursor: isUploading ? "not-allowed" : "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem"
+          }}
         >
-          Finish
+          {isUploading ? "Adding Product..." : "Finish"}
         </button>
       </form>
     </div>
