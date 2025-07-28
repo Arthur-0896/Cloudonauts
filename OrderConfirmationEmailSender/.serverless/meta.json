@@ -1,0 +1,118 @@
+{
+  "C:\\users\\shaik\\Desktop\\Cloudonauts\\Cloudonauts\\OrderConfirmationEmailSender\\serverless.yml": {
+    "versionFramework": "4.17.2",
+    "servicePath": "C:\\users\\shaik\\Desktop\\Cloudonauts\\Cloudonauts\\OrderConfirmationEmailSender\\serverless.yml",
+    "serviceConfigFileName": "serverless.yml",
+    "service": {
+      "service": "email-order-confirmation-service",
+      "provider": {
+        "name": "aws",
+        "runtime": "python3.9",
+        "region": "us-east-1",
+        "memorySize": 128,
+        "timeout": 30,
+        "environment": {
+          "AWS_REGION": "us-east-1",
+          "SES_SOURCE_EMAIL": "shaikhuzair961@gmail.com"
+        },
+        "iam": {
+          "role": {
+            "statements": [
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "ses:SendEmail"
+                ],
+                "Resource": "*"
+              },
+              {
+                "Effect": "Allow",
+                "Action": [
+                  "logs:CreateLogGroup",
+                  "logs:CreateLogStream",
+                  "logs:PutLogEvents"
+                ],
+                "Resource": "arn:aws:logs:us-east-1:${aws:accountId}:log-group:/aws/lambda/*:*"
+              }
+            ]
+          }
+        }
+      },
+      "functions": {
+        "sendOrderConfirmationEmail": {
+          "handler": "lambda_function.lambda_handler",
+          "name": "OrderConfirmationEmailSender"
+        }
+      },
+      "plugins": [
+        "serverless-python-requirements"
+      ],
+      "custom": {
+        "pythonRequirements": {
+          "dockerizePip": false
+        }
+      }
+    },
+    "provider": {
+      "name": "aws",
+      "runtime": "python3.9",
+      "region": "us-east-1",
+      "memorySize": 128,
+      "timeout": 30,
+      "environment": {
+        "AWS_REGION": "us-east-1",
+        "SES_SOURCE_EMAIL": "shaikhuzair961@gmail.com"
+      },
+      "iam": {
+        "role": {
+          "statements": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "ses:SendEmail"
+              ],
+              "Resource": "*"
+            },
+            {
+              "Effect": "Allow",
+              "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Resource": "arn:aws:logs:us-east-1:${aws:accountId}:log-group:/aws/lambda/*:*"
+            }
+          ]
+        }
+      }
+    },
+    "dashboard": {
+      "isEnabledForService": false,
+      "requiredAuthentication": false,
+      "orgFeaturesInUse": null,
+      "orgObservabilityIntegrations": null,
+      "serviceAppId": null,
+      "serviceProvider": null,
+      "instanceParameters": null
+    },
+    "error": {
+      "message": "Failed to resolve variable 'accountId' with resolver 'ssm' and provider 'default-aws-credential-resolver': Error: AWS credentials missing or invalid. Original error from AWS: Could not load credentials from any providers",
+      "stack": "Error: Failed to resolve variable 'accountId' with resolver 'ssm' and provider 'default-aws-credential-resolver': Error: AWS credentials missing or invalid. Original error from AWS: Could not load credentials from any providers\n    at #resolveKey (file:///C:/Users/shaik/.serverless/releases/4.17.2/package/dist/sf-core.js:809:25583)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async _ResolverManager.resolve (file:///C:/Users/shaik/.serverless/releases/4.17.2/package/dist/sf-core.js:809:31573)\n    at async #handlePlaceholderNode (file:///C:/Users/shaik/.serverless/releases/4.17.2/package/dist/sf-core.js:809:30118)\n    at async file:///C:/Users/shaik/.serverless/releases/4.17.2/package/dist/sf-core.js:809:27990\n    at async processNodeAndHandleCompletion (file:///C:/Users/shaik/.serverless/releases/4.17.2/package/dist/sf-core.js:809:16769)",
+      "code": "RESOLVER_RESOLVE_VARIABLE_ERROR"
+    },
+    "serviceRawFile": "# serverless.yml\r\n\r\n# --------------------------------------------------------------------------\r\n# 1. Service Definition\r\n# --------------------------------------------------------------------------\r\n# The name of your serverless service. This will form part of the CloudFormation\r\n# stack name and resource names in AWS.\r\nservice: email-order-confirmation-service\r\n\r\n# --------------------------------------------------------------------------\r\n# 2. Provider Configuration\r\n# --------------------------------------------------------------------------\r\n# Defines the cloud provider (AWS), runtime, region, and global settings for\r\n# your functions within this service.\r\nprovider:\r\n  name: aws                # Specifies AWS as the cloud provider\r\n  runtime: python3.9       # The Python runtime version for your Lambda function\r\n  region: us-east-1        # The AWS region where your Lambda will be deployed\r\n                           # Make sure this matches your 'aws configure' default region.\r\n  memorySize: 128          # Optional: Amount of memory (in MB) allocated to your Lambda (default is 128)\r\n  timeout: 30              # Optional: Maximum execution time for your Lambda (in seconds, default is 30)\r\n\r\n  # --- Environment Variables ---\r\n  # These variables are made available to your Lambda function at runtime via os.environ.get()\r\n  environment:\r\n    AWS_REGION: ${self:provider.region} # Dynamically sets region from provider config\r\n    # IMPORTANT: Replace 'your-verified-sender@example.com' with the email\r\n    # address you have VERIFIED in your AWS SES console.\r\n    SES_SOURCE_EMAIL: shaikhuzair961@gmail.com # <-- YOUR VERIFIED SES EMAIL HERE\r\n\r\n  # --- IAM Role and Permissions ---\r\n  # This section defines the IAM permissions that the Lambda function will\r\n  # have when it executes. The Serverless Framework automatically creates\r\n  # an IAM Role for your service and attaches these permissions.\r\n  iam:\r\n    role:\r\n      statements:\r\n        # Allows the Lambda function to send emails via SES\r\n        - Effect: \"Allow\"\r\n          Action:\r\n            - \"ses:SendEmail\"\r\n          # For better security, you can restrict the resource to your verified identity ARN:\r\n          # Resource: \"arn:aws:ses:${self:provider.region}:${aws:accountId}:identity/your-verified-sender@example.com\"\r\n          # For now, \"*\" is fine for learning, but be aware it means \"any SES resource\".\r\n          Resource: \"*\"\r\n\r\n        # Allows the Lambda function to write logs to CloudWatch Logs (highly recommended for debugging)\r\n        - Effect: \"Allow\"\r\n          Action:\r\n            - \"logs:CreateLogGroup\"\r\n            - \"logs:CreateLogStream\"\r\n            - \"logs:PutLogEvents\"\r\n          Resource: \"arn:aws:logs:${self:provider.region}:${aws:accountId}:log-group:/aws/lambda/*:*\"\r\n\r\n# --------------------------------------------------------------------------\r\n# 3. Functions Definition\r\n# --------------------------------------------------------------------------\r\n# Defines your individual AWS Lambda functions within this service.\r\nfunctions:\r\n  # This is the logical name for your function within this serverless.yml.\r\n  # It's a convenient handle for you when running Serverless commands.\r\n  sendOrderConfirmationEmail:\r\n    # `handler` specifies the file and function name that Serverless Framework should execute.\r\n    # Format: `filename.function_name`\r\n    # In your case, `lambda_function.py` contains the `lambda_handler` function.\r\n    handler: lambda_function.lambda_handler\r\n    # `name` is the actual name the Lambda function will have in the AWS Console.\r\n    # IMPORTANT: This must match the LAMBDA_FUNCTION_NAME in your Flask app's .env file.\r\n    name: OrderConfirmationEmailSender # <--- Ensure this matches Flask's LAMBDA_FUNCTION_NAME\r\n\r\n# --------------------------------------------------------------------------\r\n# 4. Plugins (Optional but Recommended for Python)\r\n# --------------------------------------------------------------------------\r\n# Plugins extend the functionality of the Serverless Framework.\r\n# `serverless-python-requirements` automatically bundles dependencies from requirements.txt\r\n# and includes them in your deployment package.\r\nplugins:\r\n  - serverless-python-requirements\r\n\r\n# --- Custom Plugin Configuration ---\r\ncustom:\r\n  pythonRequirements:\r\n    # If you're deploying from a non-Linux OS (e.g., Windows, macOS) and your\r\n    # dependencies include compiled binaries (like numpy), set this to `true`.\r\n    # It uses Docker to build the package in a Linux environment.\r\n    dockerizePip: false # Set to true if you have complex non-pure Python packages or issues\r\n    # If dockerizePip is true, ensure Docker Desktop is running on your machine.",
+    "command": [
+      "deploy"
+    ],
+    "options": {},
+    "orgId": "3459b95b-18f5-4774-88c7-56594a4eb9d5",
+    "orgName": "uzzyworkplace",
+    "userId": "w4NhNlGg77XVkLmQHT",
+    "userName": "uzzyworkplace",
+    "serviceProviderAwsCfStackId": null,
+    "serviceProviderAwsCfStackCreated": null,
+    "serviceProviderAwsCfStackUpdated": null,
+    "serviceProviderAwsCfStackStatus": null,
+    "serviceProviderAwsCfStackOutputs": null
+  }
+}
