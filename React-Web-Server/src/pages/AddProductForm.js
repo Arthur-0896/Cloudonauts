@@ -1,8 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Notification from "../components/Notification";
 
 function AddProductForm() {
-  const [formData, setFormData] = useState({
+  const initialFormState = {
     category: "",
     gender: "",
     productName: "",
@@ -10,7 +10,10 @@ function AddProductForm() {
     price: "",
     count: "",
     description: "",
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormState);
+  const [formErrors, setFormErrors] = useState({});
 
   const [imageFile, setImageFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -22,6 +25,17 @@ function AddProductForm() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  const [previewUrl, setPreviewUrl] = useState(null);
+
+  useEffect(() => {
+    // Create the preview URL when image file changes
+    if (imageFile) {
+      const url = URL.createObjectURL(imageFile);
+      setPreviewUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [imageFile]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -53,8 +67,54 @@ function AddProductForm() {
     fileInputRef.current.click();
   };
 
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formData.category.trim()) errors.category = "Category is required";
+    if (!formData.gender.trim()) errors.gender = "Gender is required";
+    if (!formData.productName.trim()) errors.productName = "Product name is required";
+    if (!formData.size.trim()) errors.size = "Size is required";
+    
+    if (!formData.price.trim()) {
+      errors.price = "Price is required";
+    } else if (isNaN(formData.price) || parseFloat(formData.price) <= 0) {
+      errors.price = "Price must be a positive number";
+    }
+    
+    if (!formData.count.trim()) {
+      errors.count = "Count is required";
+    } else if (!Number.isInteger(Number(formData.count)) || Number(formData.count) <= 0) {
+      errors.count = "Count must be a positive integer";
+    }
+    
+    if (!formData.description.trim()) errors.description = "Description is required";
+    if (!imageFile) errors.image = "Product image is required";
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const resetForm = () => {
+    setFormData(initialFormState);
+    setImageFile(null);
+    setFormErrors({});
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      setNotification({
+        show: true,
+        message: "Please fix the errors in the form",
+        type: "error"
+      });
+      return;
+    }
+
     setIsUploading(true);
 
     try {
@@ -88,16 +148,36 @@ function AddProductForm() {
         throw new Error(result.error || "Failed to add product");
       }
 
+      // Create an image preview URL if available in the response
+      const imageUrl = result.imageUrl || URL.createObjectURL(imageFile);
+      
       setNotification({
         show: true,
-        message: "Product added successfully!",
+        message: (
+          <div>
+            <p>Product added successfully!</p>
+            <p style={{ fontSize: '14px', margin: '5px 0' }}>
+              <strong>Product:</strong> {formData.productName}
+            </p>
+            <img 
+              src={imageUrl} 
+              alt="Product preview" 
+              style={{ 
+                maxWidth: '100px', 
+                maxHeight: '100px', 
+                marginTop: '5px',
+                borderRadius: '4px',
+                objectFit: 'contain'
+              }} 
+            />
+          </div>
+        ),
         type: "success"
       });
 
-      // Redirect after a short delay to show the success message
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 2000);
+      // Reset the form and scroll to top
+      resetForm();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
 
     } catch (err) {
       console.error(err);
@@ -125,14 +205,24 @@ function AddProductForm() {
       <form onSubmit={handleSubmit} encType="multipart/form-data">
         {["category", "gender", "productName", "size", "price", "count"].map((field) => (
           <div key={field} style={{ marginBottom: "1rem" }}>
-            <label>{field.charAt(0).toUpperCase() + field.slice(1)}:</label>
+            <label>
+              {field === 'productName' ? 'Product Name' : field.charAt(0).toUpperCase() + field.slice(1)}:
+            </label>
             <input
               name={field}
               value={formData[field]}
               onChange={handleChange}
-              required
-              style={{ width: "100%", padding: "0.5rem" }}
+              style={{ 
+                width: "100%", 
+                padding: "0.5rem",
+                border: formErrors[field] ? '1px solid red' : '1px solid #ccc'
+              }}
             />
+            {formErrors[field] && (
+              <div style={{ color: 'red', fontSize: '0.8rem', marginTop: '0.2rem' }}>
+                {formErrors[field]}
+              </div>
+            )}
           </div>
         ))}
         <div style={{ marginBottom: "1rem" }}>
@@ -145,9 +235,15 @@ function AddProductForm() {
               width: "100%", 
               padding: "0.5rem",
               minHeight: "100px",
-              resize: "vertical"
+              resize: "vertical",
+              border: formErrors.description ? '1px solid red' : '1px solid #ccc'
             }}
           />
+          {formErrors.description && (
+            <div style={{ color: 'red', fontSize: '0.8rem', marginTop: '0.2rem' }}>
+              {formErrors.description}
+            </div>
+          )}
         </div>
 
         <div
@@ -156,7 +252,7 @@ function AddProductForm() {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           style={{
-            border: dragActive ? "2px dashed #007bff" : "2px dashed #ccc",
+            border: formErrors.image ? "2px dashed red" : (dragActive ? "2px dashed #007bff" : "2px dashed #ccc"),
             borderRadius: "8px",
             padding: "2rem",
             textAlign: "center",
@@ -167,7 +263,43 @@ function AddProductForm() {
           }}
         >
           {imageFile ? (
-            <p><strong>Selected:</strong> {imageFile.name}</p>
+            <div>
+              <img 
+                src={previewUrl} 
+                alt="Preview" 
+                style={{
+                  maxWidth: '200px',
+                  maxHeight: '200px',
+                  objectFit: 'contain',
+                  marginBottom: '10px',
+                  borderRadius: '4px'
+                }}
+              />
+              <p style={{ margin: '10px 0' }}>
+                <strong>Selected:</strong> {imageFile.name}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setImageFile(null);
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = '';
+                    }
+                  }}
+                  style={{
+                    marginLeft: '10px',
+                    padding: '2px 8px',
+                    backgroundColor: '#ff4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ✕
+                </button>
+              </p>
+            </div>
           ) : (
             <p>Drag & drop image here, or click to browse</p>
           )}
@@ -179,6 +311,11 @@ function AddProductForm() {
             style={{ display: "none" }}
           />
         </div>
+        {formErrors.image && (
+          <div style={{ color: 'red', fontSize: '0.8rem', marginTop: '0.2rem', marginBottom: '1rem' }}>
+            {formErrors.image}
+          </div>
+        )}
 
         <button
           type="submit"
