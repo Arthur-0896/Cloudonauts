@@ -42,6 +42,7 @@ class Product(db.Model):
     imageLink = db.Column(db.String(255))
     thumbLink = db.Column(db.String(255))
     inventory = db.Column(db.Integer)
+    description = db.Column(db.Text)  # Changed to Text type for longer descriptions
 
     # Update the relationship to use OrderProduct
     order_products = db.relationship('OrderProduct', back_populates='product')

@@ -1,37 +1,125 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-function productCard({ product }) {
-  const count = product.inventory?.count ?? 0;
-  const inStock = count > 0;
+function ProductCard({ product }) {
+  const navigate = useNavigate();
+  const inStock = product.inventory > 0;
+  const [isHovered, setIsHovered] = React.useState(false);
+
+  const handleClick = () => {
+    try {
+      navigate(`/product/${product.pid}`);
+    } catch (error) {
+      console.error('Navigation error:', error);
+    }
+  };
+
   return (
-    <div style={{ border: "1px solid #ccc", padding: "1rem", borderRadius: "8px" }}>
-      <img
-        src={product.thumbLink}
-        alt={product.name}
-        style={{ 
-          width: "100%", 
-          height: "100px", 
-          objectFit: "cover", 
-          marginBottom: "0.5rem",
-          border: "3px solid #181919ff",      // <-- Change border color and thickness
-          borderRadius: "12px"
-        }}
-      />
-      <h4>{product.name}</h4>
-      <p><strong>Category:</strong> {product.category}</p>
-      <p><strong>Gender:</strong> {product.gender}</p>
-      <p><strong>Product Name:</strong> {product.productName}</p>
-      <p><strong>Size:</strong> {product.size}</p>
-      <p><strong>Price:</strong> ${product.price}</p>
-      
-      <p>
-        {product.inventory.count > 0
-          ? <span style={{ color: "green" }}>IN STOCK: {product.inventory.count}</span>
-          : <span style={{ color: "red" }}>NOT IN STOCK</span>
-        }
-      </p>
+    <div 
+      onClick={handleClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{ 
+        width: "250px",
+        height: "400px",
+        backgroundColor: "#ffffff",
+        border: "1px solid #e5e7eb",
+        padding: "1.5rem",
+        borderRadius: "15px",
+        cursor: "pointer",
+        transition: "all 0.3s ease",
+        boxShadow: isHovered 
+          ? "0 12px 20px rgba(0, 0, 0, 0.1)" 
+          : "0 4px 6px rgba(0, 0, 0, 0.05)",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+        overflow: "hidden",
+        transform: isHovered ? "translateY(-5px)" : "translateY(0)",
+      }}
+    >
+      <div style={{
+        width: "100%",
+        height: "200px",
+        overflow: "hidden",
+        borderRadius: "10px",
+        marginBottom: "1rem"
+      }}>
+        <img
+          src={product.thumbLink}
+          alt={product.productName}
+          style={{ 
+            width: "100%", 
+            height: "100%", 
+            objectFit: "cover",
+            borderRadius: "10px",
+            transition: "transform 0.3s ease"
+          }}
+        />
+      </div>
+
+      <h3 style={{
+        fontSize: "1.25rem",
+        fontWeight: "600",
+        color: "#1f2937",
+        marginBottom: "0.75rem",
+        lineHeight: "1.2"
+      }}>{product.productName}</h3>
+
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(2, 1fr)",
+        gap: "0.5rem",
+        fontSize: "0.9rem",
+        color: "#4b5563",
+        marginBottom: "auto"
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+          <span style={{ fontWeight: "500" }}>Category:</span>
+          <span>{product.category}</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+          <span style={{ fontWeight: "500" }}>Gender:</span>
+          <span>{product.gender}</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+          <span style={{ fontWeight: "500" }}>Size:</span>
+          <span>{product.size}</span>
+        </div>
+      </div>
+
+      <div style={{
+        marginTop: "1rem",
+        padding: "0.75rem",
+        borderTop: "1px solid #e5e7eb",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center"
+      }}>
+        <div style={{
+          fontSize: "1.25rem",
+          fontWeight: "700",
+          color: "#1f2937"
+        }}>
+          ${parseFloat(product.price).toFixed(2)}
+        </div>
+        
+        <div style={{
+          padding: "0.5rem 0.75rem",
+          borderRadius: "full",
+          fontSize: "0.875rem",
+          fontWeight: "500",
+          backgroundColor: product.inventory > 0 ? "#dcfce7" : "#fee2e2",
+          color: product.inventory > 0 ? "#166534" : "#991b1b"
+        }}>
+          {product.inventory > 0
+            ? `In Stock (${product.inventory})`
+            : "Out of Stock"
+          }
+        </div>
+      </div>
     </div>
   );
 }
 
-export default productCard;
+export default ProductCard;

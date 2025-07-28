@@ -17,10 +17,10 @@ const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
   <React.StrictMode>
-    <AuthProvider {...cognitoAuthConfig}>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider {...cognitoAuthConfig}>
         <AppRoutes />
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );

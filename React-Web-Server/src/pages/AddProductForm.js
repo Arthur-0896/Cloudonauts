@@ -9,6 +9,7 @@ function AddProductForm() {
     size: "",
     price: "",
     count: "",
+    description: "",
   });
 
   const [imageFile, setImageFile] = useState(null);
@@ -66,6 +67,7 @@ function AddProductForm() {
       formDataToSend.append('size', formData.size);
       formDataToSend.append('price', formData.price);
       formDataToSend.append('count', formData.count);
+      formDataToSend.append('description', formData.description);
 
       // Add image if one was selected
       if (imageFile) {
@@ -133,6 +135,20 @@ function AddProductForm() {
             />
           </div>
         ))}
+        <div style={{ marginBottom: "1rem" }}>
+          <label>Description:</label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            style={{ 
+              width: "100%", 
+              padding: "0.5rem",
+              minHeight: "100px",
+              resize: "vertical"
+            }}
+          />
+        </div>
 
         <div
           onClick={triggerFileSelect}

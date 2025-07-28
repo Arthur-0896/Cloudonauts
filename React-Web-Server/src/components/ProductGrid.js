@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Cookies from 'js-cookie';
 import { useAuth } from '../context/AuthContext'; // Ensure correct path to AuthContext
 import Notification from './Notification';
+import ProductCard from './ProductCard';
 
 function ProductGrid({ products }) {
   const { updateCartCount } = useAuth(); // Get updateCartCount from AuthContext
@@ -57,39 +58,13 @@ function ProductGrid({ products }) {
         const isOutOfStock = product.inventory === 0;
 
         return (
-          <div
-            key={product.pid}
-            style={{
-              ...styles.card,
-              ...(isOutOfStock ? styles.cardOutOfStock : {}),
-            }}
-            className="product-card"
-          >
-            <img
-              src={product.thumbLink || "https://via.placeholder.com/150"}
-              alt={product.productName}
-              onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }}
-              style={{ ...styles.image, opacity: isOutOfStock ? 0.6 : 1 }}
-            />
-
-            <h4 style={{ ...styles.title, color: isOutOfStock ? "#a0a0a0" : "#111827" }}>
-              {product.productName}
-            </h4>
-            <p style={styles.sizeText}>
-              <span style={{ fontWeight: "500", color: "#555" }}>Size:</span>{" "}
-              {product.size || "No size available."}
-            </p>
-
-            <p style={styles.price}>
-              <strong>
-                {!isNaN(price) ? `$${price.toFixed(2)}` : "Price not available"}
-              </strong>
-            </p>
-
+          <div key={product.pid} style={{ position: 'relative' }}>
+            <ProductCard product={product} />
             {!isOutOfStock && (
               <div style={styles.buttonWrapper}>
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent card click
                     if (itemsInCart.includes(product.pid)) {
                       handleRemoveFromCart(product.pid, product.productName);
                     } else {
@@ -120,8 +95,6 @@ function ProductGrid({ products }) {
                 </button>
               </div>
             )}
-
-
             {isOutOfStock && (
               <div style={styles.outOfStockOverlay}>Out of Stock</div>
             )}
@@ -145,13 +118,13 @@ function ProductGrid({ products }) {
 const styles = {
   gridContainer: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-    gap: "1.5rem",
+    gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+    gap: "2rem",
     padding: "2rem",
     backgroundColor: "#f4f6f8",
     borderRadius: "16px",
-    justifyContent: "center",
-    placeItems: "center",
+    justifyItems: "center",
+    alignItems: "start",
   },
   card: {
     position: "relative",

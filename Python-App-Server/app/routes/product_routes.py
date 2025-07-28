@@ -27,6 +27,7 @@ def add_product():
         size = request.form.get('size')
         price = request.form.get('price')
         count = request.form.get('count')
+        description = request.form.get('description', '')  # Optional field with empty default
 
         if not all([category, gender, productName, size, price]) or count is None:
             return jsonify({'error': 'Missing required fields'}), 400
@@ -38,7 +39,8 @@ def add_product():
             productName=productName,
             size=size,
             price=float(price),
-            inventory=int(count)
+            inventory=int(count),
+            description=description
         )
         
         # Handle image upload if present
@@ -111,7 +113,26 @@ def get_all_products():
             'size': product.size,
             'price': str(product.price),
             'inventory': product.inventory,
-            'thumbLink': product.thumbLink
+            'thumbLink': product.thumbLink,
+            'description': product.description
         } for product in productList]), 200
     except Exception as e:
         return jsonify({"error": "Failed to retrieve products", "message": str(e)}), 500
+
+@product_bp.route('/products/<int:pid>', methods=['GET'])
+def get_product(pid):
+    try:
+        product = Product.query.get_or_404(pid)
+        return jsonify({
+            'pid': product.pid,
+            'category': product.category,
+            'gender': product.gender,
+            'productName': product.productName,
+            'size': product.size,
+            'price': str(product.price),
+            'inventory': product.inventory,
+            'thumbLink': product.thumbLink,
+            'description': product.description
+        }), 200
+    except Exception as e:
+        return jsonify({"error": "Failed to retrieve product", "message": str(e)}), 500
