@@ -1,40 +1,67 @@
 from flask import Blueprint, request, jsonify
 from app.models import User, Product, Order, OrderProduct
 from app import db
-from app.auth.token_verify import verify_token
+from app.auth.token_verify import verify_token # Assuming this is for user authentication/authorization
 import traceback
 import boto3 # Import boto3 for AWS SDK
 import os    # For environment variables
+import json  # For serializing message body to JSON
 
 order_bp = Blueprint('order_bp', __name__)
 
-# Initialize AWS Lambda client
-# It's good practice to get the region from environment variables
-# For local development, you might hardcode it or configure AWS CLI credentials
-lambda_client = boto3.client(
-    'lambda',
-    region_name=os.environ.get('AWS_REGION', 'us-east-1'), # Replace 'us-east-1' with your desired region
-    aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),      # Ensure these are set in your environment
-    aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY') # For production, use IAM roles with instance profiles
+# --- Configuration for AWS SQS ---
+# It's good practice to get the region and queue name from environment variables.
+# For local development, ensure these are set in your environment or use a .env file.
+# For production on AWS (e.g., EC2, ECS), use IAM roles/instance profiles for credentials.
+SQS_QUEUE_NAME = os.environ.get('SQS_ORDER_CONFIRMATION_QUEUE_NAME', 'order-confirmation-queue')
+AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1') # Ensure this matches your SQS queue's region
+
+# Initialize SQS client
+sqs_client = boto3.client(
+    'sqs',
+    region_name=AWS_REGION,
+    # For local development, ensure AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are set
+    # in your environment. For production on AWS, rely on IAM roles.
+    aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY')
 )
 
-# Replace with the actual name of your Lambda function
-# This should match the name you gave it in the AWS Lambda console (e.g., OrderConfirmationEmailSender)
-LAMBDA_FUNCTION_NAME = os.environ.get('LAMBDA_ORDER_CONFIRMATION_NAME', 'OrderConfirmationEmailSender')
+# --- Helper function to get SQS Queue URL ---
+# This avoids repeatedly calling get_queue_url if the URL is stable.
+# For a production application, consider caching this URL after the first lookup.
+def get_sqs_queue_url(queue_name):
+    try:
+        response = sqs_client.get_queue_url(QueueName=queue_name)
+        return response['QueueUrl']
+    except Exception as e:
+        print(f"Error getting SQS queue URL for '{queue_name}': {e}")
+        raise
 
-# Route to get all products ordered by a user (no change here)
+# Cache the queue URL
+SQS_QUEUE_URL = get_sqs_queue_url(SQS_QUEUE_NAME)
+
+
+# Route to get all products ordered by a user (no change needed here)
 @order_bp.route('/user-orders/<user_sub>', methods=['GET'])
+# You might want to add @verify_token here if this is a protected route
 def get_user_orders(user_sub):
     try:
         user = User.query.filter_by(sub=user_sub).first()
         if not user:
             return jsonify({"error": "User not found"}), 404
+
         orders_list = []
+        # Fetch orders for the user
+        # Assuming 'orders' is a relationship on the User model
         for order in user.orders:
             order_dict = {
                 'order_id': order.oid,
+                # Add order_total and email_sent if they exist in your Order model
+                # 'order_total': str(order.order_total) if hasattr(order, 'order_total') else None,
+                # 'email_sent': order.email_sent if hasattr(order, 'email_sent') else None,
                 'products': []
             }
+            # Fetch order products for the current order
             order_products = OrderProduct.query.filter_by(oid=order.oid).all()
             for op in order_products:
                 product = Product.query.filter_by(pid=op.pid).first()
@@ -45,8 +72,9 @@ def get_user_orders(user_sub):
                         'gender': product.gender,
                         'productName': product.productName,
                         'size': product.size,
-                        'price': str(product.price),
-                        'thumbLink': product.thumbLink
+                        'price': str(product.price), # Convert Decimal to string for JSON
+                        'thumbLink': product.thumbLink,
+                        'quantity': op.quantity if hasattr(op, 'quantity') else 1 # Assuming quantity in OrderProduct
                     })
             orders_list.append(order_dict)
         return jsonify(orders_list)
@@ -54,94 +82,107 @@ def get_user_orders(user_sub):
         traceback.print_exc() # Print full traceback for debugging
         return jsonify({"error": str(e)}), 500
 
+
 @order_bp.route('/place-order', methods=['POST'])
+# You might want to add @verify_token here if this is a protected route
 def place_order():
     try:
         data = request.json
         user_sub = data.get('user_sub')
-        product_ids = data.get('products', [])
+        product_ids_with_quantities = data.get('products', []) # Expecting a list of dicts: [{'pid': 1, 'quantity': 2}, ...]
 
-        if not user_sub or not product_ids:
-            return jsonify({"error": "Missing required parameters"}), 400
+        if not user_sub or not product_ids_with_quantities:
+            return jsonify({"error": "Missing required parameters (user_sub or products)"}), 400
 
-        # Get user by sub
         user = User.query.filter_by(sub=user_sub).first()
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        # Create new order
-        new_order = Order(Useruid=user.uid)
-        db.session.add(new_order)
-        db.session.flush()  # This gets us the new order ID before commit
+        # Calculate total and prepare product details for the order and potential email
+        total_order_amount = 0
+        order_products_to_add = [] # To store OrderProduct objects
+        products_for_email = [] # To store simplified product details for SQS/email
 
-        # Prepare product details for the email (optional, but good for detailed emails)
-        ordered_products_details = []
+        for item in product_ids_with_quantities:
+            pid = item.get('pid')
+            quantity = item.get('quantity', 1) # Default to 1 if quantity not provided
 
-        # Add all products to the order
-        for pid in product_ids:
+            if not pid or not isinstance(quantity, int) or quantity <= 0:
+                db.session.rollback()
+                return jsonify({"error": f"Invalid product ID or quantity provided: {item}"}), 400
+
             product = Product.query.get(pid)
             if not product:
                 db.session.rollback()
                 return jsonify({"error": f"Product with ID {pid} not found"}), 404
-            
-            if product.inventory <= 0:
+
+            if product.inventory < quantity:
                 db.session.rollback()
-                return jsonify({"error": f"Product {product.productName} is out of stock"}), 400
+                return jsonify({"error": f"Product {product.productName} has insufficient stock. Available: {product.inventory}, Requested: {quantity}"}), 400
 
-            order_product = OrderProduct(oid=new_order.oid, pid=pid)
-            db.session.add(order_product)
-            product.inventory -= 1
+            # Update inventory and calculate total
+            product.inventory -= quantity
+            total_order_amount += product.price * quantity
 
-            ordered_products_details.append({
+            # Create OrderProduct instance
+            order_products_to_add.append(OrderProduct(pid=pid, quantity=quantity))
+
+            # Prepare product details for the email payload (optional, but good for detailed emails)
+            products_for_email.append({
                 'pid': product.pid,
                 'productName': product.productName,
                 'price': str(product.price), # Convert Decimal to string for JSON
-                'thumbLink': product.thumbLink
+                'thumbLink': product.thumbLink,
+                'quantity': quantity,
+                'size': product.size # Include size for email detail
             })
 
-        # Commit the transaction to save order and product updates
+        # Create new order
+        # Ensure your Order model has 'Useruid', 'order_total', and 'email_sent' fields
+        new_order = Order(Useruid=user.uid, order_total=total_order_amount, email_sent=False)
+        db.session.add(new_order)
+        db.session.flush() # This gets us the new order ID (new_order.oid) before commit
+
+        # Link order_products to the new order and add to session
+        for op in order_products_to_add:
+            op.oid = new_order.oid
+            db.session.add(op)
+
+        # Commit the transaction to save order, order_products, and product inventory updates
         db.session.commit()
 
-        # --- IMPORTANT: Trigger the Lambda function AFTER successful commit ---
+        # --- IMPORTANT: Send order ID to SQS AFTER successful database commit ---
         try:
-            # Construct the payload for the Lambda function
-            lambda_payload = {
-                'orderId': new_order.oid,
-                'customerEmail': user.email, # Assuming your User model has an 'email' field
-                'customerName': user.username, # Assuming your User model has a 'username' field
-                'products': ordered_products_details # Include product details
-            }
-            
-            # Invoke the Lambda function asynchronously (InvocationType='Event')
-            # 'Event' means Lambda processes it in the background, without waiting for a response.
-            # This is ideal for tasks like sending emails where your API doesn't need to wait.
-            response = lambda_client.invoke(
-                FunctionName=LAMBDA_FUNCTION_NAME,
-                InvocationType='Event', # 'RequestResponse' for synchronous, 'Event' for asynchronous
-                Payload=json.dumps(lambda_payload)
-            )
-            
-            print(f"Lambda invocation response: {response}")
-            # Check for errors in the invocation response (though for 'Event' type, it's mostly about validation)
-            if response.get('StatusCode') != 202: # 202 Accepted for 'Event' invocation
-                print(f"Warning: Lambda invocation might have failed. Status Code: {response.get('StatusCode')}")
-                # You might log this error to a monitoring system
-            
-        except Exception as lambda_err:
-            print(f"Error invoking Lambda function {LAMBDA_FUNCTION_NAME}: {lambda_err}")
-            traceback.print_exc()
-            # Decide if you want to fail the order if email fails.
-            # For confirmation emails, usually, we don't, as the order is already placed.
-            # You might log this error and have a retry mechanism.
+            # The SQS message body should ideally be minimal, just the order_id.
+            # The Lambda will then fetch all necessary details from the DB.
+            sqs_message_body = json.dumps({"oid": new_order.oid})
 
+            send_response = sqs_client.send_message(
+                QueueUrl=SQS_QUEUE_URL,
+                MessageBody=sqs_message_body,
+                # For FIFO queues, you'd need MessageGroupId and MessageDeduplicationId:
+                # MessageGroupId='order_confirmation',
+                # MessageDeduplicationId=str(new_order.oid) # Ensure this is unique per message
+            )
+
+            print(f"Order ID {new_order.oid} sent to SQS. Message ID: {send_response['MessageId']}")
+
+        except Exception as sqs_err:
+            print(f"Error sending order ID {new_order.oid} to SQS: {sqs_err}")
+            traceback.print_exc()
+            # Decide how to handle SQS send failure:
+            # - Log it and proceed (order is placed, email might be delayed/missed)
+            # - Rollback the order (more complex, might need user notification)
+            # For order confirmation, usually logging and proceeding is acceptable.
 
         # Your API response to the frontend
         return jsonify({
-            "message": "Order placed successfully. Confirmation email is being sent.",
-            "order_id": new_order.oid
+            "message": "Order placed successfully. Confirmation email processing initiated.",
+            "order_id": new_order.oid,
+            "total_amount": str(total_order_amount)
         }), 201
 
     except Exception as e:
-        db.session.rollback()
+        db.session.rollback() # Rollback any changes if an error occurs
         traceback.print_exc() # Print full traceback for debugging
         return jsonify({"error": str(e)}), 500

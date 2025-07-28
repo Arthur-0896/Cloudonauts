@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 import boto3
 
-client = boto3.client('cognito-idp', region_name='us-east-2')  # or your desired region
+client = boto3.client('cognito-idp', region_name='us-east-1')  # or your desired region
 
 admin_bp = Blueprint('admin_bp', __name__)
 
