@@ -13,7 +13,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # Cognito
-    COGNITO_REGION = "us-east-2"
-    USERPOOL_ID = "us-east-2_mDEOMLwWP"
-    CLIENT_ID = "1geutha5o3v903feg0p86l72ol"
+    COGNITO_REGION = os.getenv("COGNITO_REGION", "us-east-2")
+    USERPOOL_ID = os.getenv("COGNITO_USER_POOL_ID")
+    CLIENT_ID = os.getenv("COGNITO_CLIENT_ID")
     JWKS_URL = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{USERPOOL_ID}/.well-known/jwks.json"
