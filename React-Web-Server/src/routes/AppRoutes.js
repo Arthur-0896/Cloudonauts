@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import OrderConfirmation from '../pages/OrderConfirmation';
 import App from "../App";
 import AuthenticatedHome from "../pages/AuthenticatedHome";
+import ConfirmSignUpPage from "../pages/ConfirmSignUpPage";
 import AddProductForm from "../pages/AddProductForm";
 import LoginPage from "../pages/LoginPage";
 import SignUpPage from "../pages/SignUpPage";
@@ -20,6 +21,7 @@ function AppRoutes() {
         <Route path="add-product" element={<AddProductForm />} />
         <Route path="/product/:pid" element={<ProductDetail />} />
         <Route path="signup" element={<SignUpPage />} />
+        <Route path="confirm-signup" element={<ConfirmSignUpPage />} />
         <Route path="login" element={<LoginPage />} />
                   <Route path="/cart" element={<Cart />} />
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />

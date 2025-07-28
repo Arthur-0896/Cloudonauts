@@ -20,6 +20,7 @@ if (!missingConfig) {
 }
 
 function SignUpPage() {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -29,6 +30,10 @@ function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  const navigateToConfirmation = (email) => {
+    navigate('/confirm-signup', { state: { email } });
+  };
 
   const handleChange = e => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -83,6 +88,7 @@ function SignUpPage() {
           }
           setSuccess(true);
           setLoading(false);
+          navigateToConfirmation(form.email);
         }
       }
     );
