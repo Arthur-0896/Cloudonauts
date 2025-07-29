@@ -15,12 +15,19 @@ SQS_QUEUE_NAME = os.environ.get('SQS_ORDER_CONFIRMATION_QUEUE_NAME', 'order-conf
 AWS_REGION = os.environ.get('AWS_REGION', 'us-east-1')
 
 # Initialize SQS client
-sqs_client = boto3.client(
-    'sqs',
-    region_name=AWS_REGION,
-    aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY')
-)
+sqs_kwargs = {
+    'service_name': 'sqs',
+    'region_name': AWS_REGION
+}
+
+# Only add credentials if they are present in environment variables
+if os.environ.get('AWS_ACCESS_KEY_ID') and os.environ.get('AWS_SECRET_ACCESS_KEY'):
+    sqs_kwargs.update({
+        'aws_access_key_id': os.environ.get('AWS_ACCESS_KEY_ID'),
+        'aws_secret_access_key': os.environ.get('AWS_SECRET_ACCESS_KEY')
+    })
+
+sqs_client = boto3.client(**sqs_kwargs)
 
 # --- Helper function to get SQS Queue URL ---
 def get_sqs_queue_url(queue_name):

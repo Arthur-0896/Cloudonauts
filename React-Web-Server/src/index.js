@@ -5,9 +5,22 @@ import { AuthProvider } from "react-oidc-context";
 import { BrowserRouter } from "react-router-dom";
 import AppRoutes from "./routes/AppRoutes";
 
+// Validate required environment variables
+const requiredEnvVars = [
+  'REACT_APP_COGNITO_USER_POOL_ID',
+  'REACT_APP_COGNITO_CLIENT_ID',
+  'REACT_APP_COGNITO_REDIRECT_URI'
+];
+
+requiredEnvVars.forEach(varName => {
+  if (!process.env[varName]) {
+    throw new Error(`Missing required environment variable: ${varName}`);
+  }
+});
+
 // Extract region from User Pool ID (e.g., 'us-east-1_xxx' -> 'us-east-1')
 const userPoolId = process.env.REACT_APP_COGNITO_USER_POOL_ID;
-const region = userPoolId?.split('_')[0] || 'us-east-1';
+const region = userPoolId.split('_')[0];
 
 const cognitoAuthConfig = {
   authority: `https://cognito-idp.${region}.amazonaws.com/${userPoolId}`,
