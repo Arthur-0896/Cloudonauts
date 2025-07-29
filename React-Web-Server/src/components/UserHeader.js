@@ -38,9 +38,15 @@ function UserHeader() {
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: "1.5rem" }}>
       <img
-        src="/images/cloudonauts-shopping.png"
+        src={`${window.location.origin}/images/cloudonauts-shopping.png`}
         alt="Cloudonauts Shopping"
         style={{ height: "120px", width: "auto", objectFit: "contain" }}
+        onError={(e) => {
+          console.log('Image failed to load with path:', e.target.src);
+          if (!e.target.src.startsWith('http://react-web-server-cloudonauts.s3-website.us-east-2.amazonaws.com')) {
+            e.target.src = "http://react-web-server-cloudonauts.s3-website.us-east-2.amazonaws.com/images/cloudonauts-shopping.png";
+          }
+        }}
       />
 
       {/* NAVIGATION */}
