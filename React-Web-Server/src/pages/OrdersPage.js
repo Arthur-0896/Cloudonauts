@@ -22,7 +22,9 @@ function OrdersPage() {
         }
 
         const data = await response.json();
-        setOrders(data);
+        // Sort orders by order_id in descending order (latest first)
+        const sortedOrders = [...data].sort((a, b) => b.order_id - a.order_id);
+        setOrders(sortedOrders);
       } catch (err) {
         setError(err.message);
       } finally {
