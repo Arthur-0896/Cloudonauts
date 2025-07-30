@@ -38,7 +38,7 @@ function UserHeader() {
   return (
     <div style={{ display: "flex", alignItems: "flex-start", gap: "1.5rem" }}>
       <img
-        src={`${window.location.origin}/images/cloudonauts-shopping.png`}
+        src={`/images/Cloudonauts-shopping.png`}
         alt="Cloudonauts Shopping"
         style={{ height: "120px", width: "auto", objectFit: "contain" }}
         onError={(e) => {
