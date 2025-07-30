@@ -68,7 +68,7 @@ function SignUpPage() {
         } else {
           try {
             // Track user in backend
-            const response = await fetch('http://localhost:5000/users', {
+            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/users`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'

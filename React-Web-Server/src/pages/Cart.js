@@ -47,7 +47,7 @@ function Cart() {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/place-order', {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/place-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

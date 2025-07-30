@@ -16,7 +16,7 @@ function OrdersPage() {
           return;
         }
 
-        const response = await fetch(`http://localhost:5000/user-orders/${user.attributes.sub}`);
+        const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/user-orders/${user.attributes.sub}`);
         if (!response.ok) {
           throw new Error('Failed to fetch orders');
         }
