@@ -53,17 +53,19 @@ function Cart() {
     }
   };
 
-  // Decrement product quantity
+  // Decrement product quantity or remove if quantity becomes 0
   const handleDecrement = (pid) => {
     const currentQty = cartQuantities[pid] || 1;
-    if (currentQty > 1) {
-      const cartObj = { ...cartQuantities, [pid]: currentQty - 1 };
-      Cookies.set("cart", JSON.stringify(cartObj), { expires: 7 });
-      setCartQuantities(cartObj);
-      loadCartItems();
-      window.dispatchEvent(new Event("cartUpdated"));
-    } else {
-      handleRemove(pid);
+    if (currentQty > 0) {
+      if (currentQty === 1) {
+        handleRemove(pid);
+      } else {
+        const cartObj = { ...cartQuantities, [pid]: currentQty - 1 };
+        Cookies.set("cart", JSON.stringify(cartObj), { expires: 7 });
+        setCartQuantities(cartObj);
+        loadCartItems();
+        window.dispatchEvent(new Event("cartUpdated"));
+      }
     }
   };
 
@@ -155,12 +157,10 @@ function Cart() {
                   <h3 style={styles.productName}>{item.productName}</h3>
                   <p style={styles.details}>Size: {item.size || "N/A"}</p>
                   <p style={styles.details}>Category: {item.category}</p>
-                  <strong style={styles.price}>${parseFloat(item.price).toFixed(2)}</strong>
                   <div style={{ display: "flex", alignItems: "center", marginTop: "0.5rem", gap: "0.5rem" }}>
                     <button
-                      style={styles.counterButton}
+                      style={styles.decrementButton}
                       onClick={() => handleDecrement(item.pid)}
-                      disabled={cartQuantities[item.pid] <= 1}
                     >−</button>
                     <span style={styles.counterValue}>{cartQuantities[item.pid]}</span>
                     <button
@@ -170,29 +170,30 @@ function Cart() {
                     >+</button>
                   </div>
                 </div>
-                <button style={styles.removeButton} onClick={() => handleRemove(item.pid)}>
-                  Remove
-                </button>
+                <div style={styles.priceInfo}>
+                  {cartQuantities[item.pid] > 1 ? (
+                    <>
+                      <div style={styles.priceCalculation}>
+                        ${parseFloat(item.price).toFixed(2)} × {cartQuantities[item.pid]}
+                      </div>
+                      <div style={styles.subtotal}>
+                        <strong style={{ color: "#03b723" }}>${(parseFloat(item.price) * cartQuantities[item.pid]).toFixed(2)}</strong>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={styles.subtotal}>
+                      <strong style={{ color: "#03b723" }}>${parseFloat(item.price).toFixed(2)}</strong>
+                    </div>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
 
-          {/* Cart Summary moved below products */}
-          <div style={styles.summaryContainer}>
-            <h3 style={styles.summaryHeading}>Order Summary</h3>
-            <ul style={styles.summaryList}>
-              {breakdown.map((item, idx) => (
-                <li key={idx} style={styles.summaryItem}>
-                  <span style={{ fontWeight: "500" }}>{item.name}</span>
-                  <span>
-                    {item.qty} × ${item.price.toFixed(2)} = <strong>${item.subtotal.toFixed(2)}</strong>
-                  </span>
-                </li>
-              ))}
-            </ul>
+          <div style={styles.cartFooter}>
             <div style={styles.summaryTotal}>
               <span style={{ fontWeight: "bold", fontSize: "1.1rem" }}>Total:</span>
-              <span style={{ fontWeight: "bold", fontSize: "1.1rem" }}>${total.toFixed(2)}</span>
+              <span style={{ fontWeight: "bold", fontSize: "1.1rem", color: "#03b723" }}>${total.toFixed(2)}</span>
             </div>
           </div>
 
@@ -230,7 +231,7 @@ function Cart() {
 
 const styles = {
   container: {
-    maxWidth: "720px",
+    maxWidth: "800px",
     margin: "2rem auto",
     padding: "1.5rem",
     backgroundColor: "#fff",
@@ -338,6 +339,20 @@ const styles = {
     justifyContent: "center",
     transition: "background-color 0.2s",
   },
+  decrementButton: {
+    backgroundColor: "#dc2626",
+    color: "#fff",
+    border: "none",
+    borderRadius: "50%",
+    width: "32px",
+    height: "32px",
+    fontSize: "1.3rem",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "background-color 0.2s",
+  },
   counterValue: {
     fontSize: "1.1rem",
     fontWeight: "bold",
@@ -386,6 +401,27 @@ const styles = {
     backgroundColor: "#94a3b8",
     cursor: "not-allowed",
     opacity: 0.7,
+  },
+  priceInfo: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    justifyContent: "center",
+    minWidth: "120px",
+  },
+  priceCalculation: {
+    fontSize: "0.9rem",
+    color: "#6b7280",
+    marginBottom: "0.25rem",
+  },
+  subtotal: {
+    fontSize: "1.1rem",
+    color: "#111827",
+  },
+  cartFooter: {
+    marginTop: "1rem",
+    paddingTop: "1rem",
+    borderTop: "2px solid #e5e7eb",
   },
 };
 

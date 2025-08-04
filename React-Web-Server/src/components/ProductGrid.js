@@ -85,60 +85,14 @@ function ProductGrid({ products }) {
 
           return (
             <div key={product.pid} style={{ position: 'relative' }}>
-              <ProductCard product={product} />
-              {!isOutOfStock && (
-                <div style={styles.buttonWrapper}>
-                  {!inCart ? (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleAddToCart(product.pid, product.productName);
-                      }}
-                      style={styles.addToCartButton}
-                      title="Add to Cart"
-                    >
-                      Add to Cart
-                    </button>
-                  ) : (
-                    <div style={styles.counterContainer}>
-                      <button
-                        style={styles.counterButton}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDecrement(product.pid, product.productName);
-                        }}
-                        disabled={quantity <= 1}
-                      >
-                        −
-                      </button>
-                      <span style={styles.counterValue}>{quantity}</span>
-                      <button
-                        style={styles.counterButton}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleIncrement(product.pid, product.productName, product.inventory);
-                        }}
-                        disabled={quantity >= product.inventory}
-                      >
-                        +
-                      </button>
-                      <button
-                        style={styles.removeButton}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveFromCart(product.pid, product.productName);
-                        }}
-                        title="Remove from Cart"
-                      >
-                        🗑
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-              {isOutOfStock && (
-                <div style={styles.outOfStockOverlay}>Out of Stock</div>
-              )}
+              <ProductCard 
+                product={product}
+                cartItems={cartItems}
+                onAddToCart={handleAddToCart}
+                onRemoveFromCart={handleRemoveFromCart}
+                onIncrement={handleIncrement}
+                onDecrement={handleDecrement}
+              />
             </div>
           );
         })}

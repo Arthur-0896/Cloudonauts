@@ -108,7 +108,11 @@ function OrderConfirmation() {
                   Quantity: <strong>{product.qty}</strong>
                 </p>
                 <p style={styles.productPrice}>
-                  ${product.price.toFixed(2)} × {product.qty} = <strong>${product.subtotal.toFixed(2)}</strong>
+                  {product.qty > 1 ? (
+                    <>${product.price.toFixed(2)} × {product.qty} = <strong style={{ color: "#059669" }}>${product.subtotal.toFixed(2)}</strong></>
+                  ) : (
+                    <strong style={{ color: "#059669" }}>${product.price.toFixed(2)}</strong>
+                  )}
                 </p>
               </div>
             </div>
@@ -242,7 +246,7 @@ const styles = {
   },
   productPrice: {
     fontSize: "0.95rem", // reduced from 1rem
-    color: "#059669",
+    color: "#111827",
     fontWeight: "bold",
     marginTop: "0.1rem", // reduced from 0.2rem
   },
