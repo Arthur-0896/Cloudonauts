@@ -7,7 +7,8 @@ def get_database_config():
     # Check if running in AWS (ECS/EC2/Lambda) - AWS automatically sets AWS_EXECUTION_ENV
     if os.environ.get('AWS_EXECUTION_ENV') is not None:  # Running in AWS environment
         try:
-            session = boto3.session.Session()
+            aws_region = os.environ.get('AWS_REGION', 'us-east-1')
+            session = boto3.session.Session(region_name=aws_region)
             client = session.client('secretsmanager')
             secret = client.get_secret_value(SecretId='cloudonauts/db-credentials')
             rds_secret = json.loads(secret['SecretString'])
