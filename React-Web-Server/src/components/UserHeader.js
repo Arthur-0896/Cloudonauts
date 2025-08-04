@@ -1,17 +1,48 @@
 import React, { useState, useEffect } from "react";
+import Cookies from "js-cookie";
 import { useAuth } from "../context/AuthContext";
 import Notification from "./Notification";
-// No need to import Cookies here for cart count as it's handled in AuthContext
 
 function UserHeader() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [showLogoutNotification, setShowLogoutNotification] = useState(false);
-  const { user, logout, cartCount } = useAuth(); // Get cartCount from AuthContext
+  const { user, logout } = useAuth();
+
+  const [cartCount, setCartCount] = useState(0);
 
   const firstName = user?.attributes?.["custom:FirstName"];
   const email = user?.attributes?.email;
 
-  // No need for the useEffect for cartCount here anymore, it's managed by AuthContext
+  // Calculate cart count from cookies (sum of quantities)
+  const updateCartCount = () => {
+    const cartCookie = Cookies.get("cart");
+    if (cartCookie) {
+      try {
+        const cartObj = JSON.parse(cartCookie);
+        const totalItems = Object.values(cartObj).reduce((sum, qty) => sum + qty, 0);
+        setCartCount(totalItems);
+      } catch {
+        setCartCount(0);
+      }
+    } else {
+      setCartCount(0);
+    }
+  };
+
+  useEffect(() => {
+    updateCartCount();
+    // Listen for custom cart update event
+    const handleCartUpdate = () => updateCartCount();
+    window.addEventListener("cartUpdated", handleCartUpdate);
+    return () => window.removeEventListener("cartUpdated", handleCartUpdate);
+  }, []);
+
+  // Optionally, update cartCount when cookies change (listen for storage events)
+  useEffect(() => {
+    const handleStorage = () => updateCartCount();
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   const handleDropdown = (key) => {
     setOpenDropdown(openDropdown === key ? null : key);

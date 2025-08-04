@@ -14,6 +14,7 @@ class Order(db.Model):
 
     oid = db.Column(db.Integer, primary_key=True)
     Useruid = db.Column(db.Integer, db.ForeignKey('users.uid'), nullable=False)
+    total_amount = db.Column(db.Numeric(10, 2), nullable=True)  # Add this if you want
 
     user = db.relationship('User', back_populates='orders')
     order_products = db.relationship('OrderProduct', back_populates='order')
@@ -25,6 +26,7 @@ class OrderProduct(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     oid = db.Column(db.Integer, db.ForeignKey('order.oid'), nullable=False)
     pid = db.Column(db.Integer, db.ForeignKey('product.pid'), nullable=False)
+    count = db.Column(db.Integer, default=1)  # Assuming each order product is one unit
     
     # Add relationships to both Order and Product
     order = db.relationship('Order', back_populates='order_products')

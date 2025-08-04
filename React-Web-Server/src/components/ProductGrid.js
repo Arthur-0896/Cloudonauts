@@ -1,52 +1,76 @@
 import React, { useState } from 'react';
 import Cookies from 'js-cookie';
-import { useAuth } from '../context/AuthContext'; // Ensure correct path to AuthContext
+import { useAuth } from '../context/AuthContext';
 import Notification from './Notification';
 import ProductCard from './ProductCard';
 
 function ProductGrid({ products }) {
-  const { updateCartCount } = useAuth(); // Get updateCartCount from AuthContext
+  const { updateCartCount } = useAuth();
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
-  const [itemsInCart, setItemsInCart] = useState([]);
+  const [cartItems, setCartItems] = useState({}); // { pid: quantity }
 
-  // Initialize items in cart from cookies
+  // Initialize cart items from cookies
   React.useEffect(() => {
     const existingCart = Cookies.get('cart');
     if (existingCart) {
-      setItemsInCart(JSON.parse(existingCart));
+      setCartItems(JSON.parse(existingCart));
     }
   }, []);
 
+  // Helper to get total items in cart
+  const getTotalCartItems = () => {
+    return Object.values(cartItems).reduce((sum, qty) => sum + qty, 0);
+  };
+
+  // Update cart count in context and dispatch event for header
+  React.useEffect(() => {
+    updateCartCount(getTotalCartItems());
+    window.dispatchEvent(new Event("cartUpdated"));
+  }, [cartItems, updateCartCount]);
+
+  const handleAddToCart = (productId, productName) => {
+    const updatedCart = { ...cartItems, [productId]: 1 };
+    Cookies.set('cart', JSON.stringify(updatedCart), { expires: 7 });
+    setCartItems(updatedCart);
+    setNotificationMessage(`${productName} added to cart`);
+    setShowNotification(true);
+    window.dispatchEvent(new Event("cartUpdated"));
+  };
+
   const handleRemoveFromCart = (productId, productName) => {
-    const existingCart = Cookies.get('cart');
-    if (existingCart) {
-      const cart = JSON.parse(existingCart);
-      const updatedCart = cart.filter(id => id !== productId);
+    const updatedCart = { ...cartItems };
+    delete updatedCart[productId];
+    Cookies.set('cart', JSON.stringify(updatedCart), { expires: 7 });
+    setCartItems(updatedCart);
+    setNotificationMessage(`${productName} removed from cart`);
+    setShowNotification(true);
+    window.dispatchEvent(new Event("cartUpdated"));
+  };
+
+  const handleIncrement = (productId, productName, inventory) => {
+    const currentQty = cartItems[productId] || 0;
+    if (currentQty < inventory) {
+      const updatedCart = { ...cartItems, [productId]: currentQty + 1 };
       Cookies.set('cart', JSON.stringify(updatedCart), { expires: 7 });
-      setItemsInCart(updatedCart);
-      setNotificationMessage(`${productName} removed from cart`);
+      setCartItems(updatedCart);
+      setNotificationMessage(`${productName} quantity updated`);
       setShowNotification(true);
-      updateCartCount();
+      window.dispatchEvent(new Event("cartUpdated"));
     }
   };
 
-  const handleAddToCart = (productId, productName) => {
-    let cart = [];
-    const existingCart = Cookies.get('cart'); // Get 'cart' cookie
-    if (existingCart) { // If cart exists in cookies
-      cart = JSON.parse(existingCart); // Parse the cart data
-    }
-    if (!cart.includes(productId)) { // If product is not already in cart
-      cart.push(productId); // Add product ID to cart
-      Cookies.set('cart', JSON.stringify(cart), { expires: 7 }); // Set updated cart in cookies
-      setItemsInCart(cart); // Update local state
-      setNotificationMessage(`${productName} added to cart successfully`);
+  const handleDecrement = (productId, productName) => {
+    const currentQty = cartItems[productId] || 0;
+    if (currentQty > 1) {
+      const updatedCart = { ...cartItems, [productId]: currentQty - 1 };
+      Cookies.set('cart', JSON.stringify(updatedCart), { expires: 7 });
+      setCartItems(updatedCart);
+      setNotificationMessage(`${productName} quantity updated`);
       setShowNotification(true);
-      updateCartCount(); // Call to update the cart count in UserHeader via AuthContext
+      window.dispatchEvent(new Event("cartUpdated"));
     } else {
-      setNotificationMessage('Item already in cart');
-      setShowNotification(true);
+      handleRemoveFromCart(productId, productName);
     }
   };
 
@@ -54,53 +78,70 @@ function ProductGrid({ products }) {
     <div>
       <div style={styles.gridContainer}>
         {products.map((product) => {
-        const price = parseFloat(product.price);
-        const isOutOfStock = product.inventory === 0;
+          const price = parseFloat(product.price);
+          const isOutOfStock = product.inventory === 0;
+          const inCart = cartItems.hasOwnProperty(product.pid);
+          const quantity = cartItems[product.pid] || 0;
 
-        return (
-          <div key={product.pid} style={{ position: 'relative' }}>
-            <ProductCard product={product} />
-            {!isOutOfStock && (
-              <div style={styles.buttonWrapper}>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent card click
-                    if (itemsInCart.includes(product.pid)) {
-                      handleRemoveFromCart(product.pid, product.productName);
-                    } else {
-                      handleAddToCart(product.pid, product.productName);
-                    }
-                  }}
-                  style={{
-                    ...styles.addToCartButton,
-                    ...(itemsInCart.includes(product.pid) && styles.removeButton)
-                  }}
-                  onMouseEnter={(e) => {
-                    if (itemsInCart.includes(product.pid)) {
-                      e.currentTarget.style.backgroundColor = "#cc0000"
-                    } else {
-                      e.currentTarget.style.backgroundColor = "#04db2a"
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (itemsInCart.includes(product.pid)) {
-                      e.currentTarget.style.backgroundColor = "#ff0000"
-                    } else {
-                      e.currentTarget.style.backgroundColor = "#03b723"
-                    }
-                  }}
-                  title={itemsInCart.includes(product.pid) ? "Remove from Cart" : "Add to Cart"}
-                >
-                  {itemsInCart.includes(product.pid) ? "Remove" : "Add to Cart"}
-                </button>
-              </div>
-            )}
-            {isOutOfStock && (
-              <div style={styles.outOfStockOverlay}>Out of Stock</div>
-            )}
-          </div>
-        );
-      })}
+          return (
+            <div key={product.pid} style={{ position: 'relative' }}>
+              <ProductCard product={product} />
+              {!isOutOfStock && (
+                <div style={styles.buttonWrapper}>
+                  {!inCart ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAddToCart(product.pid, product.productName);
+                      }}
+                      style={styles.addToCartButton}
+                      title="Add to Cart"
+                    >
+                      Add to Cart
+                    </button>
+                  ) : (
+                    <div style={styles.counterContainer}>
+                      <button
+                        style={styles.counterButton}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDecrement(product.pid, product.productName);
+                        }}
+                        disabled={quantity <= 1}
+                      >
+                        −
+                      </button>
+                      <span style={styles.counterValue}>{quantity}</span>
+                      <button
+                        style={styles.counterButton}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleIncrement(product.pid, product.productName, product.inventory);
+                        }}
+                        disabled={quantity >= product.inventory}
+                      >
+                        +
+                      </button>
+                      <button
+                        style={styles.removeButton}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveFromCart(product.pid, product.productName);
+                        }}
+                        title="Remove from Cart"
+                      >
+                        🗑
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              {isOutOfStock && (
+                <div style={styles.outOfStockOverlay}>Out of Stock</div>
+              )}
+            </div>
+          );
+        })}
       </div>
       {showNotification && (
         <Notification
@@ -164,15 +205,13 @@ const styles = {
     marginTop: "0.5rem",
     fontSize: "1rem",
     color: "#334155",
-    fontWeight: "bold", // Make it bold
+    fontWeight: "bold",
   },
-
   buttonWrapper: {
     marginTop: "0.8rem",
     display: "flex",
     justifyContent: "center",
   },
-
   addToCartButton: {
     backgroundColor: "#03b723",
     color: "#fff",
@@ -186,13 +225,51 @@ const styles = {
     gap: "0.5rem",
     transition: "all 0.2s",
   },
+  counterContainer: {
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    backgroundColor: "#f9fafb",
+    borderRadius: "24px",
+    padding: "0.3rem 1rem",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+  },
+  counterButton: {
+    backgroundColor: "#03b723",
+    color: "#fff",
+    border: "none",
+    borderRadius: "50%",
+    width: "32px",
+    height: "32px",
+    fontSize: "1.3rem",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "background-color 0.2s",
+  },
+  counterValue: {
+    fontSize: "1.1rem",
+    fontWeight: "bold",
+    minWidth: "24px",
+    textAlign: "center",
+    color: "#222",
+  },
   removeButton: {
     backgroundColor: "#ff0000",
     color: "#fff",
+    border: "none",
+    borderRadius: "50%",
+    width: "32px",
+    height: "32px",
+    fontSize: "1.1rem",
     cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: "0.5rem",
+    transition: "background-color 0.2s",
   },
-
-
   button: {
     marginTop: "1rem",
     padding: "0.5rem 1rem",
