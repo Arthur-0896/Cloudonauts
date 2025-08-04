@@ -14,15 +14,12 @@ function ProductDetail() {
   const [notification, setNotification] = useState(null);
   const [isAddButtonHovered, setIsAddButtonHovered] = useState(false);
   const [isCartButtonHovered, setIsCartButtonHovered] = useState(false);
-
-  console.log("ProductDetail mounted, pid:", pid); // Debug log
+  const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
     const fetchProduct = async () => {
-      console.log("Fetching product with ID:", pid); // Debug log
       try {
         const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
-        console.log("API URL:", `${apiBaseUrl}/products/${pid}`); // Debug log
         const response = await fetch(`${apiBaseUrl}/products/${pid}`);
         if (!response.ok) {
           throw new Error('Product not found');
@@ -39,9 +36,79 @@ function ProductDetail() {
     fetchProduct();
   }, [pid]);
 
+  useEffect(() => {
+    // Load quantity from cookies if exists
+    const cart = Cookies.get('cart');
+    if (cart) {
+      const cartObj = JSON.parse(cart);
+      if (cartObj[pid]) {
+        setQuantity(cartObj[pid]);
+      }
+    }
+  }, [pid]);
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
   if (!product) return <div>Product not found</div>;
+
+  // Check if product is in cart
+  const cart = Cookies.get('cart') ? JSON.parse(Cookies.get('cart')) : {};
+  const inCart = cart[pid] > 0;
+
+  const handleAddToCart = () => {
+    const updatedCart = { ...cart, [pid]: 1 };
+    Cookies.set('cart', JSON.stringify(updatedCart), { expires: 7 });
+    setQuantity(1);
+    updateCartCount(Object.values(updatedCart).reduce((sum, qty) => sum + qty, 0));
+    window.dispatchEvent(new Event("cartUpdated"));
+    setNotification({
+      message: `${product.productName} added to cart successfully`,
+      type: 'success'
+    });
+  };
+
+  const handleRemoveFromCart = () => {
+    const updatedCart = { ...cart };
+    delete updatedCart[pid];
+    Cookies.set('cart', JSON.stringify(updatedCart), { expires: 7 });
+    setQuantity(1);
+    updateCartCount(Object.values(updatedCart).reduce((sum, qty) => sum + qty, 0));
+    window.dispatchEvent(new Event("cartUpdated"));
+    setNotification({
+      message: `${product.productName} removed from cart`,
+      type: 'success'
+    });
+  };
+
+  const handleIncrement = () => {
+    if (quantity < product.inventory) {
+      const updatedCart = { ...cart, [pid]: quantity + 1 };
+      Cookies.set('cart', JSON.stringify(updatedCart), { expires: 7 });
+      setQuantity(quantity + 1);
+      updateCartCount(Object.values(updatedCart).reduce((sum, qty) => sum + qty, 0));
+      window.dispatchEvent(new Event("cartUpdated"));
+      setNotification({
+        message: `${product.productName} quantity updated`,
+        type: 'success'
+      });
+    }
+  };
+
+  const handleDecrement = () => {
+    if (quantity > 1) {
+      const updatedCart = { ...cart, [pid]: quantity - 1 };
+      Cookies.set('cart', JSON.stringify(updatedCart), { expires: 7 });
+      setQuantity(quantity - 1);
+      updateCartCount(Object.values(updatedCart).reduce((sum, qty) => sum + qty, 0));
+      window.dispatchEvent(new Event("cartUpdated"));
+      setNotification({
+        message: `${product.productName} quantity updated`,
+        type: 'success'
+      });
+    } else {
+      handleRemoveFromCart();
+    }
+  };
 
   return (
     <div style={{ 
@@ -84,7 +151,7 @@ function ProductDetail() {
             src={product.thumbLink}
             alt={product.productName}
             style={{
-              width: '66%', // Reduced by 1/3
+              width: '66%',
               height: 'auto',
               borderRadius: '8px',
               border: '3px solid #181919ff',
@@ -93,55 +160,92 @@ function ProductDetail() {
           />
           {product.inventory > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const existingCart = Cookies.get('cart');
-                  let cart = existingCart ? JSON.parse(existingCart) : [];
-                  
-                  if (cart.includes(product.pid)) {
-                    cart = cart.filter(id => id !== product.pid);
-                    Cookies.set('cart', JSON.stringify(cart), { expires: 7 });
-                    updateCartCount();
-                    setNotification({
-                      message: `${product.productName} removed from cart`,
-                      type: 'success'
-                    });
-                  } else {
-                    cart.push(product.pid);
-                    Cookies.set('cart', JSON.stringify(cart), { expires: 7 });
-                    updateCartCount();
-                    setNotification({
-                      message: `${product.productName} added to cart successfully`,
-                      type: 'success'
-                    });
-                  }
-                }}
-                onMouseEnter={() => setIsAddButtonHovered(true)}
-                onMouseLeave={() => setIsAddButtonHovered(false)}
-                style={{
-                  marginTop: '1rem',
-                  width: '66%',
-                  padding: '0.5rem',
-                  backgroundColor: Cookies.get('cart') && JSON.parse(Cookies.get('cart')).includes(product.pid)
-                    ? isAddButtonHovered ? '#b91c1c' : '#dc2626' // Red colors
-                    : isAddButtonHovered ? '#04db2a' : '#03b723', // Green colors
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '0.9rem',
-                  fontWeight: '500',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  transform: isAddButtonHovered ? 'translateY(-2px)' : 'translateY(0)',
-                  boxShadow: isAddButtonHovered ? '0 4px 6px rgba(0, 0, 0, 0.1)' : 'none'
-                }}
-              >
-                {Cookies.get('cart') && JSON.parse(Cookies.get('cart')).includes(product.pid) 
-                  ? 'Remove from Cart' 
-                  : 'Add to Cart'}
-              </button>
-              {Cookies.get('cart') && JSON.parse(Cookies.get('cart')).includes(product.pid) && (
+              {!inCart ? (
+                <button
+                  onClick={handleAddToCart}
+                  onMouseEnter={() => setIsAddButtonHovered(true)}
+                  onMouseLeave={() => setIsAddButtonHovered(false)}
+                  style={{
+                    marginTop: '1rem',
+                    width: '66%',
+                    padding: '0.5rem',
+                    backgroundColor: isAddButtonHovered ? '#04db2a' : '#03b723',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transform: isAddButtonHovered ? 'translateY(-2px)' : 'translateY(0)',
+                    boxShadow: isAddButtonHovered ? '0 4px 6px rgba(0, 0, 0, 0.1)' : 'none'
+                  }}
+                >
+                  Add to Cart
+                </button>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', width: '66%', justifyContent: 'center' }}>
+                  <button
+                    style={{
+                      backgroundColor: "#03b723",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: "32px",
+                      height: "32px",
+                      fontSize: "1.3rem",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "background-color 0.2s",
+                    }}
+                    onClick={handleDecrement}
+                    disabled={quantity <= 1}
+                  >−</button>
+                  <span style={{
+                    fontSize: "1.1rem",
+                    fontWeight: "bold",
+                    minWidth: "24px",
+                    textAlign: "center",
+                    color: "#222",
+                  }}>{quantity}</span>
+                  <button
+                    style={{
+                      backgroundColor: "#03b723",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "50%",
+                      width: "32px",
+                      height: "32px",
+                      fontSize: "1.3rem",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      transition: "background-color 0.2s",
+                    }}
+                    onClick={handleIncrement}
+                    disabled={quantity >= product.inventory}
+                  >+</button>
+                  <button
+                    style={{
+                      backgroundColor: "#ef4444",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "8px",
+                      padding: "0.5rem 1rem",
+                      fontSize: "0.9rem",
+                      marginLeft: "0.5rem",
+                      cursor: "pointer",
+                    }}
+                    onClick={handleRemoveFromCart}
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+              {inCart && (
                 <button
                   onClick={() => navigate('/cart')}
                   onMouseEnter={() => setIsCartButtonHovered(true)}

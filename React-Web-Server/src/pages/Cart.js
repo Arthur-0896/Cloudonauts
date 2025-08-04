@@ -6,6 +6,7 @@ import Notification from "../components/Notification";
 
 function Cart() {
   const [cartItems, setCartItems] = useState([]);
+  const [cartQuantities, setCartQuantities] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const { updateCartCount, user } = useAuth();
@@ -15,26 +16,55 @@ function Cart() {
     loadCartItems();
   }, []);
 
+  // Load cart items and their quantities from cookies
   const loadCartItems = () => {
-    const cart = JSON.parse(Cookies.get("cart") || "[]"); // Get and parse 'cart' cookie
-    console.log("Here are the cart items", cart);
-    const savedProducts = JSON.parse(localStorage.getItem("allProducts") || "[]"); // Get and parse 'allProducts' from local storage
-    console.log("Here are the all items", localStorage.getItem("allProducts"));
-    const cartIdsNormalized = cart.map(String); // Normalize cart IDs to strings
+    const cartObj = JSON.parse(Cookies.get("cart") || "{}"); // { pid: quantity }
+    setCartQuantities(cartObj);
+
+    const savedProducts = JSON.parse(localStorage.getItem("allProducts") || "[]");
+    // Only include products that are in the cart
     const filtered = savedProducts.filter(product =>
-      cartIdsNormalized.includes(String(product.pid)) // Filter products to match cart IDs
+      Object.keys(cartObj).includes(String(product.pid))
     );
-    console.log("Here are the filtered items", filtered);
-    setCartItems(filtered); // Set filtered cart items
-    updateCartCount(); // Update cart count after loading cart items
+    setCartItems(filtered);
+    updateCartCount(Object.values(cartObj).reduce((sum, qty) => sum + qty, 0));
+    window.dispatchEvent(new Event("cartUpdated"));
   };
 
+  // Remove product from cart
   const handleRemove = (pidToRemove) => {
-    let cart = JSON.parse(Cookies.get("cart") || "[]"); // Get and parse 'cart' cookie
-    cart = cart.filter(pid => String(pid) !== String(pidToRemove)); // Filter out the item to remove
+    const cartObj = { ...cartQuantities };
+    delete cartObj[pidToRemove];
+    Cookies.set("cart", JSON.stringify(cartObj), { expires: 7 });
+    setCartQuantities(cartObj);
+    loadCartItems();
+    window.dispatchEvent(new Event("cartUpdated"));
+  };
 
-    Cookies.set("cart", JSON.stringify(cart), { expires: 7 }); // Update cart cookie
-    loadCartItems(); // Refresh UI and also updates cart count via updateCartCount() call inside
+  // Increment product quantity
+  const handleIncrement = (pid, inventory) => {
+    const currentQty = cartQuantities[pid] || 1;
+    if (currentQty < inventory) {
+      const cartObj = { ...cartQuantities, [pid]: currentQty + 1 };
+      Cookies.set("cart", JSON.stringify(cartObj), { expires: 7 });
+      setCartQuantities(cartObj);
+      loadCartItems();
+      window.dispatchEvent(new Event("cartUpdated"));
+    }
+  };
+
+  // Decrement product quantity
+  const handleDecrement = (pid) => {
+    const currentQty = cartQuantities[pid] || 1;
+    if (currentQty > 1) {
+      const cartObj = { ...cartQuantities, [pid]: currentQty - 1 };
+      Cookies.set("cart", JSON.stringify(cartObj), { expires: 7 });
+      setCartQuantities(cartObj);
+      loadCartItems();
+      window.dispatchEvent(new Event("cartUpdated"));
+    } else {
+      handleRemove(pid);
+    }
   };
 
   const handleBuyNow = async () => {
@@ -54,7 +84,10 @@ function Cart() {
         },
         body: JSON.stringify({
           user_sub: user.attributes.sub,
-          products: cartItems.map(item => item.pid)
+          products: Object.keys(cartQuantities).map(pid => ({
+            pid: parseInt(pid, 10), // Ensure pid is an integer
+            quantity: cartQuantities[pid]
+          }))
         })
       });
 
@@ -65,8 +98,11 @@ function Cart() {
       }
 
       // Clear cart
-      Cookies.set('cart', '[]', { expires: 7 });
-      updateCartCount();
+      Cookies.set('cart', '{}', { expires: 7 });
+      setCartQuantities({});
+      setCartItems([]);
+      updateCartCount(0);
+      window.dispatchEvent(new Event("cartUpdated"));
 
       // Navigate to order confirmation with the order ID
       navigate(`/order-confirmation/${data.order_id}`);
@@ -76,6 +112,26 @@ function Cart() {
       setIsLoading(false);
     }
   };
+
+  // Calculate total price and breakdown
+  const getCartSummary = () => {
+    let total = 0;
+    const breakdown = cartItems.map(item => {
+      const qty = cartQuantities[item.pid] || 0;
+      const price = parseFloat(item.price) || 0;
+      const subtotal = qty * price;
+      total += subtotal;
+      return {
+        name: item.productName,
+        qty,
+        price,
+        subtotal,
+      };
+    });
+    return { total, breakdown };
+  };
+
+  const { total, breakdown } = getCartSummary();
 
   return (
     <div style={styles.container}>
@@ -100,6 +156,19 @@ function Cart() {
                   <p style={styles.details}>Size: {item.size || "N/A"}</p>
                   <p style={styles.details}>Category: {item.category}</p>
                   <strong style={styles.price}>${parseFloat(item.price).toFixed(2)}</strong>
+                  <div style={{ display: "flex", alignItems: "center", marginTop: "0.5rem", gap: "0.5rem" }}>
+                    <button
+                      style={styles.counterButton}
+                      onClick={() => handleDecrement(item.pid)}
+                      disabled={cartQuantities[item.pid] <= 1}
+                    >−</button>
+                    <span style={styles.counterValue}>{cartQuantities[item.pid]}</span>
+                    <button
+                      style={styles.counterButton}
+                      onClick={() => handleIncrement(item.pid, item.inventory)}
+                      disabled={cartQuantities[item.pid] >= item.inventory}
+                    >+</button>
+                  </div>
                 </div>
                 <button style={styles.removeButton} onClick={() => handleRemove(item.pid)}>
                   Remove
@@ -107,6 +176,25 @@ function Cart() {
               </li>
             ))}
           </ul>
+
+          {/* Cart Summary moved below products */}
+          <div style={styles.summaryContainer}>
+            <h3 style={styles.summaryHeading}>Order Summary</h3>
+            <ul style={styles.summaryList}>
+              {breakdown.map((item, idx) => (
+                <li key={idx} style={styles.summaryItem}>
+                  <span style={{ fontWeight: "500" }}>{item.name}</span>
+                  <span>
+                    {item.qty} × ${item.price.toFixed(2)} = <strong>${item.subtotal.toFixed(2)}</strong>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <div style={styles.summaryTotal}>
+              <span style={{ fontWeight: "bold", fontSize: "1.1rem" }}>Total:</span>
+              <span style={{ fontWeight: "bold", fontSize: "1.1rem" }}>${total.toFixed(2)}</span>
+            </div>
+          </div>
 
           <div style={styles.buttonContainer}>
             <button 
@@ -160,6 +248,40 @@ const styles = {
     fontSize: "1.1rem",
     textAlign: "center",
   },
+  summaryContainer: {
+    marginBottom: "2rem",
+    background: "#f9fafb",
+    borderRadius: "12px",
+    padding: "1rem 1.5rem",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+  },
+  summaryHeading: {
+    fontSize: "1.2rem",
+    fontWeight: "bold",
+    marginBottom: "0.75rem",
+    color: "#222",
+  },
+  summaryList: {
+    listStyleType: "none",
+    padding: 0,
+    margin: 0,
+    marginBottom: "0.75rem",
+  },
+  summaryItem: {
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: "1rem",
+    marginBottom: "0.5rem",
+    color: "#444",
+  },
+  summaryTotal: {
+    display: "flex",
+    justifyContent: "space-between",
+    borderTop: "1px solid #e5e7eb",
+    paddingTop: "0.75rem",
+    marginTop: "0.5rem",
+    color: "#111",
+  },
   list: {
     listStyleType: "none",
     padding: 0,
@@ -201,6 +323,27 @@ const styles = {
     marginTop: "0.5rem",
     fontSize: "1.1rem",
     color: "#0d9488",
+  },
+  counterButton: {
+    backgroundColor: "#03b723",
+    color: "#fff",
+    border: "none",
+    borderRadius: "50%",
+    width: "32px",
+    height: "32px",
+    fontSize: "1.3rem",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "background-color 0.2s",
+  },
+  counterValue: {
+    fontSize: "1.1rem",
+    fontWeight: "bold",
+    minWidth: "24px",
+    textAlign: "center",
+    color: "#222",
   },
   removeButton: {
     backgroundColor: "#ef4444",

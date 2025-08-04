@@ -99,17 +99,23 @@ function OrdersPage() {
                         objectFit: "cover"
                       }}
                       onError={(e) => {
-                        e.target.src = "/images/placeholder.png"; // Fallback image if thumb fails to load
+                        e.target.src = "/images/placeholder.png";
                       }}
                     />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <h4 style={{ margin: "0 0 0.5rem", color: "#444" }}>{product.productName}</h4>
+                    <h4 style={{ margin: "0 0 0.5rem", color: "#444" }}>
+                      {product.productName} × {product.quantity || 1}
+                    </h4>
                     <div style={{ fontSize: "0.9rem", color: "#666" }}>
                       <p style={{ margin: "0.2rem 0" }}>Category: {product.category}</p>
                       <p style={{ margin: "0.2rem 0" }}>Gender: {product.gender}</p>
                       <p style={{ margin: "0.2rem 0" }}>Size: {product.size}</p>
-                      <p style={{ margin: "0.2rem 0", fontWeight: "bold" }}>Price: <span style={{ color: "#28a745" }}>${product.price}</span></p>
+                      <p style={{ margin: "0.2rem 0", fontWeight: "bold" }}>
+                        Price = <span style={{ color: "#28a745", fontWeight: "bold" }}>
+                          ${(parseFloat(product.price) * (product.quantity || 1)).toFixed(2)}
+                        </span>
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -134,7 +140,9 @@ function OrdersPage() {
                 gap: "0.5rem"
               }}>
                 <span style={{ fontSize: "1.1rem", color: "#666" }}>Order Total:</span>
-                <span style={{ color: "#28a745" }}>${order.products.reduce((total, product) => total + parseFloat(product.price), 0).toFixed(2)}</span>
+                <span style={{ color: "#28a745" }}>
+                  ${order.products.reduce((total, product) => total + (parseFloat(product.price) * (product.quantity || 1)), 0).toFixed(2)}
+                </span>
               </div>
             </div>
           </div>

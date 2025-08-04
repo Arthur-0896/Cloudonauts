@@ -59,10 +59,19 @@ function OrderConfirmation() {
     return <div style={styles.container}>Order not found</div>;
   }
 
-  const totalAmount = order.products.reduce(
-    (sum, product) => sum + parseFloat(product.price),
-    0
-  ).toFixed(2);
+  // Calculate total and breakdown
+  const breakdown = order.products.map(product => {
+    const qty = product.quantity || 1;
+    const price = parseFloat(product.price) || 0;
+    const subtotal = qty * price;
+    return {
+      ...product,
+      qty,
+      price,
+      subtotal,
+    };
+  });
+  const totalAmount = breakdown.reduce((sum, item) => sum + item.subtotal, 0).toFixed(2);
 
   return (
     <div style={styles.container}>
@@ -79,27 +88,35 @@ function OrderConfirmation() {
       <div style={styles.orderDetails}>
         <h3 style={styles.sectionTitle}>Order #{order.order_id}</h3>
         <div style={styles.productList}>
-          {order.products.map((product, index) => (
+          {breakdown.map((product, index) => (
             <div key={`${product.pid}-${index}`} style={styles.productItem}>
-              <img
-                src={product.thumbLink || "https://via.placeholder.com/60"}
-                alt={product.productName}
-                style={styles.productImage}
-              />
+              <div style={styles.productImageWrapper}>
+                <img
+                  src={product.thumbLink || "https://via.placeholder.com/60"}
+                  alt={product.productName}
+                  style={styles.productImage}
+                />
+              </div>
               <div style={styles.productInfo}>
                 <h4 style={styles.productName}>{product.productName}</h4>
                 <p style={styles.productDetails}>
-                  Size: {product.size} | Category: {product.category}
+                  <span>Size: {product.size}</span>
+                  <span style={styles.dot}>•</span>
+                  <span>Category: {product.category}</span>
                 </p>
-                <p style={styles.productPrice}>${parseFloat(product.price).toFixed(2)}</p>
+                <p style={styles.productDetails}>
+                  Quantity: <strong>{product.qty}</strong>
+                </p>
+                <p style={styles.productPrice}>
+                  ${product.price.toFixed(2)} × {product.qty} = <strong>${product.subtotal.toFixed(2)}</strong>
+                </p>
               </div>
             </div>
           ))}
         </div>
-        <div style={styles.totalSection}>
-          <p style={styles.total}>
-            Total Amount: <span style={styles.totalAmount}>${totalAmount}</span>
-          </p>
+        <div style={styles.summaryTotal}>
+          <span style={{ fontWeight: "bold", fontSize: "1.1rem" }}>Total Amount:</span>
+          <span style={{ fontWeight: "bold", fontSize: "1.1rem", color: "#059669" }}>${totalAmount}</span>
         </div>
       </div>
 
@@ -170,34 +187,98 @@ const styles = {
   },
   productItem: {
     display: "flex",
-    padding: "1rem",
+    alignItems: "center",
+    padding: "0.75rem", // reduced from 1rem
     backgroundColor: "#f8fafc",
     borderRadius: "8px",
-    gap: "1rem",
+    gap: "0.75rem", // reduced from 1.5rem
+    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+  },
+  productImageWrapper: {
+    flexShrink: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "60px", // reduced from 70px
+    height: "60px", // reduced from 70px
+    background: "#fff",
+    borderRadius: "8px",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+    marginRight: "0.3rem", // reduced from 0.5rem
   },
   productImage: {
-    width: "60px",
-    height: "60px",
+    width: "48px", // reduced from 60px
+    height: "48px", // reduced from 60px
     objectFit: "cover",
-    borderRadius: "4px",
+    borderRadius: "6px",
+    background: "#e5e7eb",
   },
   productInfo: {
     flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    gap: "0.15rem", // add gap to reduce spacing between text lines
   },
   productName: {
-    fontSize: "1.1rem",
+    fontSize: "1rem", // reduced from 1.1rem
     color: "#111827",
-    marginBottom: "0.5rem",
+    marginBottom: "0.15rem", // reduced from 0.3rem
+    fontWeight: "600",
   },
   productDetails: {
-    fontSize: "0.9rem",
+    fontSize: "0.9rem", // reduced from 0.95rem
     color: "#6b7280",
-    marginBottom: "0.5rem",
+    marginBottom: "0.1rem", // reduced from 0.2rem
+    display: "flex",
+    alignItems: "center",
+    gap: "0.3rem", // reduced from 0.5rem
+  },
+  dot: {
+    display: "inline-block",
+    margin: "0 0.15rem", // reduced from 0.3rem
+    fontSize: "1em", // reduced from 1.2em
+    color: "#d1d5db",
   },
   productPrice: {
-    fontSize: "1rem",
+    fontSize: "0.95rem", // reduced from 1rem
     color: "#059669",
     fontWeight: "bold",
+    marginTop: "0.1rem", // reduced from 0.2rem
+  },
+  summarySection: {
+    marginTop: "2rem",
+    background: "#f9fafb",
+    borderRadius: "12px",
+    padding: "1rem 1.5rem",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+  },
+  summaryTitle: {
+    fontSize: "1.1rem",
+    fontWeight: "bold",
+    marginBottom: "0.75rem",
+    color: "#222",
+  },
+  summaryList: {
+    listStyleType: "none",
+    padding: 0,
+    margin: 0,
+    marginBottom: "0.75rem",
+  },
+  summaryItem: {
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: "1rem",
+    marginBottom: "0.5rem",
+    color: "#444",
+  },
+  summaryTotal: {
+    display: "flex",
+    justifyContent: "space-between",
+    borderTop: "1px solid #e5e7eb",
+    paddingTop: "0.75rem",
+    marginTop: "0.5rem",
+    color: "#111",
   },
   totalSection: {
     marginTop: "2rem",
@@ -205,27 +286,15 @@ const styles = {
     paddingTop: "1rem",
   },
   continueShoppingButton: {
-    display: "block",
-    width: "100%",
-    padding: "1rem",
-    marginBottom: "1.5rem",
+    padding: "0.75rem 1.5rem",
     backgroundColor: "#fff",
     color: "#0d9488",
     border: "2px solid #0d9488",
-    borderRadius: "12px",
-    fontSize: "1.2rem",
+    borderRadius: "8px",
+    fontSize: "1rem",
     cursor: "pointer",
     transition: "all 0.3s",
     textAlign: "center",
-  },
-  total: {
-    fontSize: "1.2rem",
-    color: "#111827",
-    textAlign: "right",
-  },
-  totalAmount: {
-    fontWeight: "bold",
-    color: "#059669",
   },
   buttonGroup: {
     display: "flex",
@@ -241,17 +310,6 @@ const styles = {
     textDecoration: "none",
     borderRadius: "8px",
     transition: "background-color 0.3s",
-    textAlign: "center",
-  },
-  continueShoppingButton: {
-    padding: "0.75rem 1.5rem",
-    backgroundColor: "#fff",
-    color: "#0d9488",
-    border: "2px solid #0d9488",
-    borderRadius: "8px",
-    fontSize: "1rem",
-    cursor: "pointer",
-    transition: "all 0.3s",
     textAlign: "center",
   },
 };

@@ -67,13 +67,13 @@ def get_user_orders(user_sub):
                         'productName': product.productName,
                         'size': product.size,
                         'price': str(product.price),
-                        'thumbLink': product.thumbLink
-                        # Quantity is implicitly 1 per entry, as per the purchase rule.
+                        'thumbLink': product.thumbLink,
+                        'quantity': op.count  # <-- Add quantity here
                     })
             orders_list.append(order_dict)
         return jsonify(orders_list)
     except Exception as e:
-        traceback.print_exc() # Print full traceback for debugging
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 
@@ -83,85 +83,75 @@ def place_order():
     try:
         data = request.json
         user_sub = data.get('user_sub')
-        # Expecting a list of unique product IDs, as only 1 of each can be bought at a time.
-        product_ids_to_buy = data.get('products', []) 
+        products_to_buy = data.get('products', [])
 
-        if not user_sub or not product_ids_to_buy:
+        if not user_sub or not products_to_buy:
             return jsonify({"error": "Missing required parameters (user_sub or products)"}), 400
 
-        if not isinstance(product_ids_to_buy, list):
-            return jsonify({"error": "'products' must be a list of product IDs"}), 400
-        
+        if not isinstance(products_to_buy, list):
+            return jsonify({"error": "'products' must be a list of objects with pid and quantity"}), 400
+
         user = User.query.filter_by(sub=user_sub).first()
         if not user:
             return jsonify({"error": "User not found"}), 404
 
-        total_order_amount = 0 
-        order_products_to_add = [] 
-        
-        # Iterate through each unique product ID to be purchased
-        for pid in product_ids_to_buy:
-            if not isinstance(pid, int):
+        total_order_amount = 0
+        order_products_to_add = []
+
+        for item in products_to_buy:
+            pid = item.get('pid')
+            quantity = item.get('quantity', 1)
+            if not isinstance(pid, int) or not isinstance(quantity, int) or quantity < 1:
                 db.session.rollback()
-                return jsonify({"error": f"Invalid product ID in list: {pid}. Expected integer."}), 400
+                return jsonify({"error": f"Invalid product or quantity: {item}"}), 400
 
             product = Product.query.get(pid)
             if not product:
                 db.session.rollback()
                 return jsonify({"error": f"Product with ID {pid} not found"}), 404
 
-            # Since only 1 unit can be bought at a time, check if inventory is at least 1
-            if product.inventory < 1:
+            if product.inventory < quantity:
                 db.session.rollback()
-                return jsonify({"error": f"Product {product.productName} (ID: {pid}) is out of stock."}), 400
-            
-            # Decrease inventory by 1 for this product
-            product.inventory -= 1
-            total_order_amount += product.price # Add price of one unit
+                return jsonify({"error": f"Product {product.productName} (ID: {pid}) does not have enough inventory."}), 400
 
-            # Create ONE OrderProduct entry for this product ID
-            order_products_to_add.append(OrderProduct(pid=pid)) 
+            # Subtract inventory
+            product.inventory -= quantity
+            total_order_amount += float(product.price) * quantity
+
+            # Create OrderProduct entry with count
+            order_products_to_add.append(OrderProduct(pid=pid, count=quantity))
 
         # Create new order
-        # Removed order_total and email_sent from constructor - as per previous request.
-        # This assumes these DB columns are nullable or have defaults.
-        new_order = Order(Useruid=user.uid) 
+        new_order = Order(Useruid=user.uid, total_amount=total_order_amount)
         db.session.add(new_order)
-        db.session.flush() # This gets us the new order ID (new_order.oid) before commit
+        db.session.flush()  # Get new_order.oid
 
         # Link order_products to the new order and add to session
         for op in order_products_to_add:
             op.oid = new_order.oid
             db.session.add(op)
 
-        # Commit the transaction to save order, order_products, and product inventory updates
         db.session.commit()
 
-        # --- Send order ID to SQS AFTER successful database commit ---
+        # Send order ID to SQS
         try:
-            # The SQS message body should ideally be minimal, just the order_id.
-            # The Lambda will then fetch all necessary details from the DB.
-            sqs_message_body = json.dumps({"order_id": new_order.oid}) 
-
+            sqs_message_body = json.dumps({"order_id": new_order.oid})
             send_response = sqs_client.send_message(
                 QueueUrl=SQS_QUEUE_URL,
                 MessageBody=sqs_message_body,
             )
             print(f"Order ID {new_order.oid} sent to SQS. Message ID: {send_response['MessageId']}")
-
         except Exception as sqs_err:
             print(f"Error sending order ID {new_order.oid} to SQS: {sqs_err}")
             traceback.print_exc()
-            # Log this error; the order itself is placed, email might be delayed.
 
-        # Your API response to the frontend
         return jsonify({
             "message": "Order placed successfully. Confirmation email processing initiated.",
-            "order_id": new_order.oid
-            # Removed "total_amount" from the response as per previous request.
+            "order_id": new_order.oid,
+            "total_amount": total_order_amount
         }), 201
 
     except Exception as e:
-        db.session.rollback() # Rollback any changes if an error occurs
-        traceback.print_exc() # Print full traceback for debugging
+        db.session.rollback()
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
