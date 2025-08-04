@@ -2,11 +2,6 @@ import os
 import boto3
 import json
 
-class Config:
-    COGNITO_REGION = os.environ.get('COGNITO_REGION', 'us-east-1')
-    COGNITO_USER_POOL_ID = os.environ.get('COGNITO_USER_POOL_ID', '')
-    JWKS_URL = f'https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}/.well-known/jwks.json'
-
 def get_database_config():
     """Get database configuration from either AWS Secrets Manager or environment variables"""
     # Check if running in AWS (ECS/EC2/Lambda) - AWS automatically sets AWS_EXECUTION_ENV
