@@ -7,8 +7,7 @@ def get_database_config():
     # Check if running in AWS (ECS/EC2/Lambda) - AWS automatically sets AWS_EXECUTION_ENV
     if os.environ.get('AWS_EXECUTION_ENV') is not None:  # Running in AWS environment
         try:
-            aws_region = os.environ.get('AWS_REGION', 'us-east-1')
-            session = boto3.session.Session(region_name=aws_region)
+            session = boto3.session.Session()
             client = session.client('secretsmanager')
             secret = client.get_secret_value(SecretId='cloudonauts/db-credentials')
             rds_secret = json.loads(secret['SecretString'])
@@ -39,4 +38,33 @@ class Config:
         f"postgresql://{db_config['username']}:{db_config['password']}@"
         f"{db_config['host']}:{db_config['port']}/{db_config['dbname']}"
     )
-    SQLALCHEMY_TRACK_MODIFICATIONS = False    
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Get Cognito configuration
+    def get_cognito_config():
+        if os.environ.get('AWS_EXECUTION_ENV') is not None:  # Running in AWS environment
+            try:
+                session = boto3.session.Session()
+                client = session.client('secretsmanager')
+                secret = client.get_secret_value(SecretId='cloudonauts/cognito-credentials')
+                cognito_config = json.loads(secret['SecretString'])
+                return {
+                    'region': cognito_config['region'],
+                    'user_pool_id': cognito_config['userPoolId'],
+                    'client_id': cognito_config['clientId']
+                }
+            except Exception as e:
+                print(f"Error fetching Cognito credentials from Secrets Manager: {str(e)}")
+                raise
+        else:  # Local development
+            return {
+                'region': os.getenv("COGNITO_REGION", "us-east-2"),
+                'user_pool_id': os.getenv("COGNITO_USER_POOL_ID"),
+                'client_id': os.getenv("COGNITO_CLIENT_ID")
+            }
+
+    cognito_config = get_cognito_config()
+    COGNITO_REGION = cognito_config['region']
+    USERPOOL_ID = cognito_config['user_pool_id']
+    CLIENT_ID = cognito_config['client_id']
+    JWKS_URL = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{USERPOOL_ID}/.well-known/jwks.json"
