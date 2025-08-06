@@ -11,21 +11,30 @@ RDS_HOST = os.environ['RDS_HOST']
 RDS_USER = os.environ['RDS_USER']
 RDS_PASS = os.environ['RDS_PASS']
 RDS_DB = os.environ['RDS_DB']
-SES_REGION = 'us-east-1'
-SES_SOURCE_EMAIL = 'orders@cloudonauts.shop'
+SES_REGION = 'us-east-2'
+SES_SOURCE_EMAIL = 'arthur.tristram1@gmail.com'
 
 # Initialize SES client
 ses = boto3.client('ses', region_name=SES_REGION)
 
-def build_html_email(name, order_id, items):
+def build_html_email(name, order_id, items, total_order_amount):
     items_html = ""
     for item in items:
+        item_total = f"<strong style='color: green;'>${item['total_price']:.2f}</strong>"
+        if item['quantity'] == 1:
+            quantity_display = f"Qty: <strong>1</strong><br>Price: {item_total}"
+        else:
+            quantity_display = (
+                f"Qty: <strong>{item['quantity']}</strong><br>"
+                f"Price: <strong>${item['price']:.2f}</strong> × {item['quantity']} = {item_total}"
+            )
+
         items_html += f"""
-        <li style="display: flex; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #e0e0e0; padding-bottom: 12px;">
+        <li style="display: flex; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #ccc; padding-bottom: 12px;">
           <img src="{item['thumb']}" alt="{item['name']}" width="80" height="80" style="border-radius: 8px; margin-right: 20px; object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
           <div style="flex-grow: 1;">
-            <p style="margin: 0 0 6px 0; font-size: 16px; font-weight: 600; color: #222;">{item['name']}</p>
-            <p style="margin: 0; font-size: 14px; color: #555;">Price: <strong>${item['price']:.2f}</strong></p>
+            <p style="margin: 0 0 6px 0; font-size: 16px; font-weight: 600; color: #1a1a1a;">{item['name']}</p>
+            <p style="margin: 0; font-size: 14px; color: #1a1a1a;">{quantity_display}</p>
           </div>
         </li>"""
 
@@ -35,68 +44,34 @@ def build_html_email(name, order_id, items):
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Your Order Confirmation</title>
-  <style>
-    body {{
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f9fafb;
-      padding: 24px 16px;
-      color: #333;
-      margin: 0;
-    }}
-    .container {{
-      max-width: 600px;
-      background: #ffffff;
-      margin: 0 auto;
-      border-radius: 10px;
-      padding: 28px 36px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }}
-    h2 {{
-      color: #1f2937;
-      font-weight: 700;
-      font-size: 24px;
-      margin-bottom: 12px;
-    }}
-    p {{
-      font-size: 16px;
-      line-height: 1.5;
-      color: #4b5563;
-      margin-top: 0;
-      margin-bottom: 16px;
-    }}
-    ul {{
-      padding-left: 0;
-      list-style-type: none;
-      margin: 0 0 24px 0;
-    }}
-    .footer {{
-      font-size: 13px;
-      color: #9ca3af;
-      text-align: center;
-      border-top: 1px solid #e5e7eb;
-      padding-top: 20px;
-    }}
-  </style>
 </head>
-<body>
-  <div class="container">
-    <h2>Hi {name},</h2>
-    <p>Thank you for your order <strong>#{order_id}</strong>!</p>
-    <p>Here are the items you ordered:</p>
-    <ul>
+<body style="background-color: #f4f4f4; padding: 20px; font-family: 'Segoe UI', Arial, sans-serif;">
+  <div style="max-width: 600px; margin: auto; background: rgb(182, 237, 253); border-radius: 8px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); font-family: 'Segoe UI', Arial, sans-serif;">
+    <div style="text-align: center; margin-bottom: 12px;">
+      <img src="https://cloudonauts-products.s3.us-east-2.amazonaws.com/Cloudonauts-shopping.png" alt="Cloudonauts Logo" width="200" height="100" style="object-fit: contain;" />
+    </div>
+    
+    <p style="color: #1a1a1a; font-size: 18px;">Greetings <b>{name}!</b> Your order is confirmed!</>
+    <p style="font-size: 16px; color: #1a1a1a;">Your order id is <strong>#{order_id}</strong></p>
+    <ul style="list-style: none; padding-left: 0;">
       {items_html}
     </ul>
-    <p>We’ll notify you when your order ships. If you have any questions, feel free to reply to this email.</p>
-    <div class="footer">
-      <p>Thanks,<br/><strong>The Cloudonauts Team</strong></p>
+    <p style="font-size: 17px; margin-top: 24px; color: #1a1a1a;"><strong>Total Order Amount: <span style="color: green;">${total_order_amount:.2f}</span></strong></p>
+    <p style="font-size: 16px; color: #1a1a1a;">We’ll notify you when your order ships.</p>
+    <div style="margin-top: 10px;">
+      <p style="font-size: 16px; color: #1a1a1a;">Thanks,<br/><strong>The Cloudonauts Team</strong></p>
     </div>
   </div>
 </body>
 </html>"""
     return html
 
-def build_text_email(name, order_id, items):
-    items_text = "\n".join(f"- {item['name']} (${item['price']:.2f})" for item in items)
+
+
+def build_text_email(name, order_id, items, total_order_amount):
+    items_text = "\n".join(
+        f"- {item['name']}: ${item['price']:.2f} × {item['quantity']} = ${item['total_price']:.2f}" for item in items
+    )
     return f"""Hi {name},
 
 Thank you for your order (Order ID: {order_id})!
@@ -104,10 +79,12 @@ Thank you for your order (Order ID: {order_id})!
 Here are the items in your order:
 {items_text}
 
+Total Order Amount: ${total_order_amount:.2f}
+
 We'll notify you when your order ships.
 
-Thanks,  
-Cloudonauts Team
+Best Regards,  
+The Cloudonauts Team
 """
 
 def lambda_handler(event, context):
@@ -141,7 +118,9 @@ def lambda_handler(event, context):
                 u.name AS user_name,
                 p."productName" AS product_name,
                 p.price AS product_price,
-                p."thumbLink" AS product_thumb
+                p."thumbLink" AS product_thumb,
+                op.count AS quantity,
+                o.total_amount AS total_order_price
             FROM "order" o
             JOIN users u ON o."Useruid" = u.uid
             JOIN order_product op ON o.oid = op.oid
@@ -159,14 +138,17 @@ def lambda_handler(event, context):
 
         user_email = rows[0][1]
         user_name = rows[0][2]
+        total_order_amount = rows[0][7]
         items = [{
             "name": row[3],
             "price": row[4],
-            "thumb": row[5]
+            "thumb": row[5],
+            "quantity": row[6],
+            "total_price": row[4] * row[6]
         } for row in rows]
 
-        html_body = build_html_email(user_name, order_id, items)
-        text_body = build_text_email(user_name, order_id, items)
+        html_body = build_html_email(user_name, order_id, items,total_order_amount)
+        text_body = build_text_email(user_name, order_id, items,total_order_amount)
 
         msg = MIMEMultipart('alternative')
         msg['Subject'] = f"Your Order Confirmation - Order #{order_id}"
