@@ -20,20 +20,14 @@ ses = boto3.client('ses', region_name=SES_REGION)
 def build_html_email(name, order_id, items, total_order_amount):
     items_html = ""
     for item in items:
-        item_total = f"<strong style='color: green;'>${item['total_price']:.2f}</strong>"
-        if item['quantity'] == 1:
-            quantity_display = f"{item_total}"
-        else:
-            quantity_display = (
-                f"<strong>${item['price']:.2f}</strong> × {item['quantity']} = {item_total}"
-            )
-
         items_html += f"""
-        <li style="display: flex; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #ccc; padding-bottom: 12px;">
+        <li style="display: flex; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #e0e0e0; padding-bottom: 12px;">
           <img src="{item['thumb']}" alt="{item['name']}" width="80" height="80" style="border-radius: 8px; margin-right: 20px; object-fit: cover; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
           <div style="flex-grow: 1;">
-            <p style="margin: 0 0 6px 0; font-size: 16px; font-weight: 600; color: #1a1a1a;">{item['name']}</p>
-            <p style="margin: 0; font-size: 14px; color: #1a1a1a;">{quantity_display}</p>
+            <p style="margin: 0 0 6px 0; font-size: 16px; font-weight: 600; color: #222;">{item['name']}</p>
+            <p style="margin: 0; font-size: 14px; color: #555;">
+            Quantity: <strong>{item['quantity']}</strong><br>
+            Price: <strong>${item['price']:.2f}</strong> × {item['quantity']} = <strong>${item['total_price']:.2f}</strong></p>
           </div>
         </li>"""
 
@@ -42,29 +36,30 @@ def build_html_email(name, order_id, items, total_order_amount):
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Your Order Confirmation</title>
+  <title>Order Confirmation</title>
 </head>
-<body style="background-color: #f4f4f4; padding: 20px; font-family: 'Segoe UI', Arial, sans-serif;">
-  <div style="max-width: 600px; margin: auto; background: rgb(182, 237, 253); border-radius: 8px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); font-family: 'Segoe UI', Arial, sans-serif;">
-    <div style="text-align: center; margin-bottom: 12px;">
-      <img src="https://cloudonauts-products.s3.us-east-2.amazonaws.com/Cloudonauts-shopping.png" alt="Cloudonauts Logo" width="200" height="100" style="object-fit: contain;" />
-    </div>
-    
-    <p style="color: #1a1a1a; font-size: 18px;">Greetings <b>{name}!</b> Your order is confirmed!</>
-    <p style="font-size: 16px; color: #1a1a1a;">Order id: <strong>#{order_id}</strong></p>
-    <ul style="list-style: none; padding-left: 0;">
+<body>
+  <div class="container" style="font-family: Arial, sans-serif; color: #1a1a1a; padding: 20px;">
+    <h2 style="margin-top: 0;">Hi {name},</h2>
+    <p>Thank you for your order <strong>#{order_id}</strong>!</p>
+    <p>Here are the items you ordered:</p>
+    <ul style="list-style: none; padding: 0;">
       {items_html}
     </ul>
-    <p style="font-size: 17px; margin-top: 24px; color: #1a1a1a;"><strong>Order Total: <span style="color: green;">${total_order_amount:.2f}</span></strong></p>
-    <p style="font-size: 16px; color: #1a1a1a;">We’ll notify you when your order ships.</p>
-    <div style="margin-top: 10px;">
-      <p style="font-size: 16px; color: #1a1a1a;">Best Regards,<br/><strong>The Cloudonauts Team</strong></p>
+    <p style="font-size: 16px;"><strong>Order Total: ${total_order_amount:.2f}</strong></p>
+    <p>We’ll notify you when your order ships. If you have any questions, feel free to reply to this email.</p>
+    <div class="footer" style="margin-top: 30px;">
+      <p>Thanks,<br/><strong>The Cloudonauts Team</strong></p>
+      <img src="https://cloudonauts-products.s3.us-east-2.amazonaws.com/Cloudonauts-shopping.png" 
+           alt="Cloudonauts Logo" 
+           width="200" 
+           height="100" 
+           style="margin-top: 10px; margin-left: -20px; object-fit: contain;" />
     </div>
   </div>
 </body>
 </html>"""
     return html
-
 
 
 def build_text_email(name, order_id, items, total_order_amount):
@@ -82,8 +77,8 @@ Total Order Amount: ${total_order_amount:.2f}
 
 We'll notify you when your order ships.
 
-Best Regards,  
-The Cloudonauts Team
+Thanks,  
+Cloudonauts Team
 """
 
 def lambda_handler(event, context):
@@ -150,7 +145,7 @@ def lambda_handler(event, context):
         text_body = build_text_email(user_name, order_id, items,total_order_amount)
 
         msg = MIMEMultipart('alternative')
-        msg['Subject'] = f"Cloudonauts Order Confirmation - #{order_id}"
+        msg['Subject'] = f"Order Confirmation - Order #{order_id}"
         msg['From'] = SES_SOURCE_EMAIL
         msg['To'] = user_email
 
