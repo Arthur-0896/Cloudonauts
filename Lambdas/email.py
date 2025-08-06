@@ -22,11 +22,10 @@ def build_html_email(name, order_id, items, total_order_amount):
     for item in items:
         item_total = f"<strong style='color: green;'>${item['total_price']:.2f}</strong>"
         if item['quantity'] == 1:
-            quantity_display = f"Qty: <strong>1</strong><br>Price: {item_total}"
+            quantity_display = f"{item_total}"
         else:
             quantity_display = (
-                f"Qty: <strong>{item['quantity']}</strong><br>"
-                f"Price: <strong>${item['price']:.2f}</strong> × {item['quantity']} = {item_total}"
+                f"<strong>${item['price']:.2f}</strong> × {item['quantity']} = {item_total}"
             )
 
         items_html += f"""
@@ -52,14 +51,14 @@ def build_html_email(name, order_id, items, total_order_amount):
     </div>
     
     <p style="color: #1a1a1a; font-size: 18px;">Greetings <b>{name}!</b> Your order is confirmed!</>
-    <p style="font-size: 16px; color: #1a1a1a;">Your order id is <strong>#{order_id}</strong></p>
+    <p style="font-size: 16px; color: #1a1a1a;">Order id: <strong>#{order_id}</strong></p>
     <ul style="list-style: none; padding-left: 0;">
       {items_html}
     </ul>
-    <p style="font-size: 17px; margin-top: 24px; color: #1a1a1a;"><strong>Total Order Amount: <span style="color: green;">${total_order_amount:.2f}</span></strong></p>
+    <p style="font-size: 17px; margin-top: 24px; color: #1a1a1a;"><strong>Order Total: <span style="color: green;">${total_order_amount:.2f}</span></strong></p>
     <p style="font-size: 16px; color: #1a1a1a;">We’ll notify you when your order ships.</p>
     <div style="margin-top: 10px;">
-      <p style="font-size: 16px; color: #1a1a1a;">Thanks,<br/><strong>The Cloudonauts Team</strong></p>
+      <p style="font-size: 16px; color: #1a1a1a;">Best Regards,<br/><strong>The Cloudonauts Team</strong></p>
     </div>
   </div>
 </body>
@@ -151,7 +150,7 @@ def lambda_handler(event, context):
         text_body = build_text_email(user_name, order_id, items,total_order_amount)
 
         msg = MIMEMultipart('alternative')
-        msg['Subject'] = f"Your Order Confirmation - Order #{order_id}"
+        msg['Subject'] = f"Cloudonauts Order Confirmation - #{order_id}"
         msg['From'] = SES_SOURCE_EMAIL
         msg['To'] = user_email
 
