@@ -43,26 +43,11 @@ class Config:
 
     # Get Cognito configuration
     def get_cognito_config():
-        if os.environ.get('AWS_EXECUTION_ENV') is not None:  # Running in AWS environment
-            try:
-                session = boto3.session.Session()
-                client = session.client('secretsmanager')
-                secret = client.get_secret_value(SecretId='cloudonauts/cognito-credentials')
-                cognito_config = json.loads(secret['SecretString'])
-                return {
-                    'region': cognito_config['region'],
-                    'user_pool_id': cognito_config['userPoolId'],
-                    'client_id': cognito_config['clientId']
-                }
-            except Exception as e:
-                print(f"Error fetching Cognito credentials from Secrets Manager: {str(e)}")
-                raise
-        else:  # Local development
-            return {
-                'region': os.getenv("COGNITO_REGION", "us-east-2"),
-                'user_pool_id': os.getenv("COGNITO_USER_POOL_ID"),
-                'client_id': os.getenv("COGNITO_CLIENT_ID")
-            }
+        return {
+            'region': os.getenv("COGNITO_REGION", "us-east-1"),
+            'user_pool_id': os.getenv("COGNITO_USER_POOL_ID"),
+            'client_id': os.getenv("COGNITO_CLIENT_ID")
+        }
 
     cognito_config = get_cognito_config()
     COGNITO_REGION = cognito_config['region']
