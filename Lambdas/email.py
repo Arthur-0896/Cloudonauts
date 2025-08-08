@@ -6,16 +6,34 @@ import traceback
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-# Load environment variables
-RDS_HOST = os.environ['RDS_HOST']
-RDS_USER = os.environ['RDS_USER']
-RDS_PASS = os.environ['RDS_PASS']
-RDS_DB = os.environ['RDS_DB']
-SES_REGION = 'us-east-2'
-SES_SOURCE_EMAIL = 'arthur.tristram1@gmail.com'
+# Config
+SES_REGION = 'us-east-1'
+SES_SOURCE_EMAIL = 'orders@kronor.shop'#change to your email which you want order confirmation from
+RDS_SECRET_NAME = os.environ['RDS_SECRET_NAME']  # Name of secret in Secrets Manager
+RDS_SECRET_REGION = os.environ.get('AWS_REGION', 'us-east-1')
 
-# Initialize SES client
+# AWS Clients
 ses = boto3.client('ses', region_name=SES_REGION)
+secrets_client = boto3.client('secretsmanager', region_name=RDS_SECRET_REGION)
+
+
+def get_database_config():
+    """
+    Fetch RDS credentials from AWS Secrets Manager.
+    Expected secret keys:
+    username, password, engine, host, port, dbname, dbInstanceIdentifier
+    """
+    secret_value = secrets_client.get_secret_value(SecretId=RDS_SECRET_NAME)
+    secret_dict = json.loads(secret_value['SecretString'])
+
+    return {
+        'host': secret_dict['host'],
+        'user': secret_dict['username'],
+        'password': secret_dict['password'],
+        'dbname': secret_dict['dbname'],
+        'port': secret_dict['port']
+    }
+
 
 def build_html_email(name, order_id, items, total_order_amount):
     items_html = ""
@@ -31,40 +49,35 @@ def build_html_email(name, order_id, items, total_order_amount):
           </div>
         </li>"""
 
-    html = f"""<!DOCTYPE html>
+    return f"""<!DOCTYPE html>
 <html lang="en-US">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Order Confirmation</title>
+  <title>Your Order Confirmation</title>
 </head>
 <body>
-  <div class="container" style="font-family: Arial, sans-serif; color: #1a1a1a; padding: 20px;">
-    <h2 style="margin-top: 0;">Hi {name},</h2>
+  <div class="container">
+    <h2>Hi {name},</h2>
     <p>Thank you for your order <strong>#{order_id}</strong>!</p>
     <p>Here are the items you ordered:</p>
-    <ul style="list-style: none; padding: 0;">
+    <ul>
       {items_html}
     </ul>
-    <p style="font-size: 16px;"><strong>Order Total: ${total_order_amount:.2f}</strong></p>
+    <p><strong>Total Order Amount: ${total_order_amount:.2f}</strong></p>
     <p>We’ll notify you when your order ships. If you have any questions, feel free to reply to this email.</p>
-    <div class="footer" style="margin-top: 30px;">
+    <div class="footer">
       <p>Thanks,<br/><strong>The Cloudonauts Team</strong></p>
-      <img src="https://cloudonauts-products.s3.us-east-2.amazonaws.com/Cloudonauts-shopping.png" 
-           alt="Cloudonauts Logo" 
-           width="200" 
-           height="100" 
-           style="margin-top: 10px; margin-left: -20px; object-fit: contain;" />
     </div>
   </div>
 </body>
 </html>"""
-    return html
 
 
 def build_text_email(name, order_id, items, total_order_amount):
     items_text = "\n".join(
-        f"- {item['name']}: ${item['price']:.2f} × {item['quantity']} = ${item['total_price']:.2f}" for item in items
+        f"- {item['name']}: ${item['price']:.2f} × {item['quantity']} = ${item['total_price']:.2f}"
+        for item in items
     )
     return f"""Hi {name},
 
@@ -81,27 +94,30 @@ Thanks,
 Cloudonauts Team
 """
 
+
 def lambda_handler(event, context):
     conn = None
     cursor = None
     try:
-        # Debug log: full incoming event
         print("Incoming event:", json.dumps(event, indent=2))
 
-        # Extract Order ID from SQS message
+        # Extract Order ID from SQS
         message_body = event['Records'][0]['body']
         print(f"Raw SQS message body: {message_body}")
         msg = json.loads(message_body)
         order_id = int(msg['order_id'])
-
         print(f"Processing order ID: {order_id}")
 
-        # Connect to RDS PostgreSQL
+        # Get DB credentials from Secrets Manager
+        db_config = get_database_config()
+
+        # Connect to PostgreSQL
         conn = psycopg2.connect(
-            host=RDS_HOST,
-            database=RDS_DB,
-            user=RDS_USER,
-            password=RDS_PASS
+            host=db_config['host'],
+            database=db_config['dbname'],
+            user=db_config['user'],
+            password=db_config['password'],
+            port=db_config['port']
         )
         cursor = conn.cursor()
 
@@ -125,10 +141,7 @@ def lambda_handler(event, context):
 
         rows = cursor.fetchall()
         if not rows:
-            return {
-                "statusCode": 404,
-                "body": f"No data found for order ID {order_id}"
-            }
+            return {"statusCode": 404, "body": f"No data found for order ID {order_id}"}
 
         user_email = rows[0][1]
         user_name = rows[0][2]
@@ -141,14 +154,13 @@ def lambda_handler(event, context):
             "total_price": row[4] * row[6]
         } for row in rows]
 
-        html_body = build_html_email(user_name, order_id, items,total_order_amount)
-        text_body = build_text_email(user_name, order_id, items,total_order_amount)
+        html_body = build_html_email(user_name, order_id, items, total_order_amount)
+        text_body = build_text_email(user_name, order_id, items, total_order_amount)
 
         msg = MIMEMultipart('alternative')
-        msg['Subject'] = f"Order Confirmation - Order #{order_id}"
+        msg['Subject'] = f"Your Order Confirmation - Order #{order_id}"
         msg['From'] = SES_SOURCE_EMAIL
         msg['To'] = user_email
-
         msg.attach(MIMEText(text_body, 'plain'))
         msg.attach(MIMEText(html_body, 'html'))
 
@@ -159,28 +171,16 @@ def lambda_handler(event, context):
         )
 
         print(f"Email sent to {user_email} for order ID {order_id}. SES Message ID: {response['MessageId']}")
-
-        return {
-            "statusCode": 200,
-            "body": f"Email sent successfully for order ID {order_id}"
-        }
+        return {"statusCode": 200, "body": f"Email sent successfully for order ID {order_id}"}
 
     except Exception as e:
         error_message = f"{type(e).__name__}: {str(e)}"
         traceback_str = traceback.format_exc()
         print("Exception occurred:", error_message)
         print("Traceback:\n", traceback_str)
-
         if conn:
             conn.rollback()
-
-        return {
-            "statusCode": 500,
-            "body": json.dumps({
-                "error": error_message,
-                "trace": traceback_str
-            })
-        }
+        return {"statusCode": 500, "body": json.dumps({"error": error_message, "trace": traceback_str})}
 
     finally:
         if cursor:
