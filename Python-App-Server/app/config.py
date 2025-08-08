@@ -8,9 +8,10 @@ def get_database_config():
     if os.environ.get('AWS_EXECUTION_ENV') is not None:  # Running in AWS environment
         try:
             aws_region = os.environ.get('AWS_REGION', 'us-east-1')
+            secret_id = os.environ.get('AWS_DB_SECRET_ID', 'cloudonauts/db-credentials')
             session = boto3.session.Session(region_name=aws_region)
             client = session.client('secretsmanager')
-            secret = client.get_secret_value(SecretId='cloudonauts/db-credentials')
+            secret = client.get_secret_value(SecretId=secret_id)
             rds_secret = json.loads(secret['SecretString'])
             return {
                 'username': rds_secret['username'],

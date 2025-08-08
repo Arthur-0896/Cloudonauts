@@ -9,11 +9,23 @@ from app import db
 product_bp = Blueprint('product_bp', __name__)
 
 # Configure S3
-s3 = boto3.client('s3',
-    aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY'),
-    region_name=os.environ.get('AWS_REGION')
-)
+s3_kwargs = {
+    'service_name': 's3',
+    'region_name': os.environ.get('AWS_REGION')
+}
+
+# Only add credentials if we're not running in AWS environment (local development)
+if not os.environ.get('AWS_EXECUTION_ENV'):
+    # Check if local credentials are available
+    if os.environ.get('AWS_ACCESS_KEY_ID') and os.environ.get('AWS_SECRET_ACCESS_KEY'):
+        s3_kwargs.update({
+            'aws_access_key_id': os.environ.get('AWS_ACCESS_KEY_ID'),
+            'aws_secret_access_key': os.environ.get('AWS_SECRET_ACCESS_KEY')
+        })
+    else:
+        print("Warning: Running locally but AWS credentials not found in environment variables")
+
+s3 = boto3.client(**s3_kwargs)
 BUCKET_NAME = os.environ.get('AWS_BUCKET_NAME')
 S3_ACL = os.environ.get('AWS_S3_ACL', 'private')  # Default to private if not set
 

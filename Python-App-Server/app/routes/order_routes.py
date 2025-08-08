@@ -20,12 +20,16 @@ sqs_kwargs = {
     'region_name': AWS_REGION
 }
 
-# Only add credentials if they are present in environment variables
-if os.environ.get('AWS_ACCESS_KEY_ID') and os.environ.get('AWS_SECRET_ACCESS_KEY'):
-    sqs_kwargs.update({
-        'aws_access_key_id': os.environ.get('AWS_ACCESS_KEY_ID'),
-        'aws_secret_access_key': os.environ.get('AWS_SECRET_ACCESS_KEY')
-    })
+# Only add credentials if we're not running in AWS environment (local development)
+if not os.environ.get('AWS_EXECUTION_ENV'):
+    # Check if local credentials are available
+    if os.environ.get('AWS_ACCESS_KEY_ID') and os.environ.get('AWS_SECRET_ACCESS_KEY'):
+        sqs_kwargs.update({
+            'aws_access_key_id': os.environ.get('AWS_ACCESS_KEY_ID'),
+            'aws_secret_access_key': os.environ.get('AWS_SECRET_ACCESS_KEY')
+        })
+    else:
+        print("Warning: Running locally but AWS credentials not found in environment variables")
 
 sqs_client = boto3.client(**sqs_kwargs)
 
