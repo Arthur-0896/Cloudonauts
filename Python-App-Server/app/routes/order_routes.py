@@ -81,7 +81,7 @@ def get_user_orders(user_sub):
         return jsonify({"error": str(e)}), 500
 
 
-@order_bp.route('/place-order', methods=['POST'])
+@order_bp.route('/order', methods=['POST'])
 # You might want to add @verify_token here if this is a protected route
 def place_order():
     try:

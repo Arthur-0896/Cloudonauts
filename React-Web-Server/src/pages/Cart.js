@@ -79,7 +79,7 @@ function Cart() {
         return;
       }
 
-      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/place-order`, {
+      const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
