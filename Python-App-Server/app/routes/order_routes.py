@@ -47,7 +47,7 @@ SQS_QUEUE_URL = get_sqs_queue_url(SQS_QUEUE_NAME)
 
 # Route to get all products ordered by a user (UNCHANGED AS REQUESTED)
 # This function will list each product individually, which is accurate if only 1 unit can be purchased at a time.
-@order_bp.route('/user-orders/<user_sub>', methods=['GET'])
+@order_bp.route('/orders/<user_sub>', methods=['GET'])
 # You might want to add @verify_token here if this is a protected route
 def get_user_orders(user_sub):
     try:

@@ -10,7 +10,7 @@ function ProductCard({ product, cartItems, onAddToCart, onRemoveFromCart, onIncr
 
   const handleClick = () => {
     try {
-      navigate(`/product/${product.pid}`);
+      navigate(`/list-product/${product.pid}`);
     } catch (error) {
       console.error('Navigation error:', error);
     }

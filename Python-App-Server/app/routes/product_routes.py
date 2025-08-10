@@ -29,7 +29,7 @@ s3 = boto3.client(**s3_kwargs)
 BUCKET_NAME = os.environ.get('AWS_BUCKET_NAME')
 S3_ACL = os.environ.get('AWS_S3_ACL', 'private')  # Default to private if not set
 
-@product_bp.route('/add-product', methods=['POST'])
+@product_bp.route('/products', methods=['POST'])
 def add_product():
     try:
         # Extract product fields from form data

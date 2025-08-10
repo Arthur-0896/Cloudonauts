@@ -247,7 +247,7 @@ function UserHeader() {
             >
               <button
                 onClick={() => {
-                  window.location.href = "/orders";
+                  window.location.href = "/get-orders";
                   setOpenDropdown(null);
                 }}
                 style={{

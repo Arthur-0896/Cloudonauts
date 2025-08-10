@@ -137,7 +137,7 @@ function AddProductForm() {
       const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
       
       // Send everything to Python backend
-      const response = await fetch(`${apiBaseUrl}/add-product`, {
+      const response = await fetch(`${apiBaseUrl}/products`, {
         method: "POST",
         body: formDataToSend  // Don't set Content-Type header, let browser set it with boundary
       });

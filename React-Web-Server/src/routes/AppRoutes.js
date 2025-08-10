@@ -19,13 +19,13 @@ function AppRoutes() {
       <Route path="/" element={<App />}>
         <Route index element={<AuthenticatedHome />} />
         <Route path="add-product" element={<AddProductForm />} />
-        <Route path="/product/:pid" element={<ProductDetail />} />
+        <Route path="/list-product/:pid" element={<ProductDetail />} />
         <Route path="signup" element={<SignUpPage />} />
         <Route path="confirm-signup" element={<ConfirmSignUpPage />} />
         <Route path="login" element={<LoginPage />} />
                   <Route path="/cart" element={<Cart />} />
           <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
-        <Route path="orders" element={<OrdersPage />} />
+        <Route path="get-orders" element={<OrdersPage />} />
       </Route>
     </Routes>
   );
