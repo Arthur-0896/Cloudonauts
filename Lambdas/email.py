@@ -8,7 +8,7 @@ from email.mime.text import MIMEText
 
 # Config
 SES_REGION = 'us-east-1'
-SES_SOURCE_EMAIL = 'orders@kronor.shop'#change to your email which you want order confirmation from
+SES_SOURCE_EMAIL = 'orders@arthurtristram.xyz'#change to your email which you want order confirmation from
 RDS_SECRET_NAME = os.environ['RDS_SECRET_NAME']  # Name of secret in Secrets Manager
 RDS_SECRET_REGION = os.environ.get('AWS_REGION', 'us-east-1')
 
@@ -157,15 +157,19 @@ def lambda_handler(event, context):
         html_body = build_html_email(user_name, order_id, items, total_order_amount)
         text_body = build_text_email(user_name, order_id, items, total_order_amount)
 
+        # Set sender name
+        sender_name = "Cloudonauts"
+        from_address = f"{sender_name} <{SES_SOURCE_EMAIL}>"
+
         msg = MIMEMultipart('alternative')
         msg['Subject'] = f"Your Order Confirmation - Order #{order_id}"
-        msg['From'] = SES_SOURCE_EMAIL
+        msg['From'] = from_address
         msg['To'] = user_email
         msg.attach(MIMEText(text_body, 'plain'))
         msg.attach(MIMEText(html_body, 'html'))
 
         response = ses.send_raw_email(
-            Source=SES_SOURCE_EMAIL,
+            Source=from_address,
             Destinations=[user_email],
             RawMessage={'Data': msg.as_string()}
         )
