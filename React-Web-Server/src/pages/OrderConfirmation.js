@@ -125,7 +125,7 @@ function OrderConfirmation() {
       </div>
 
       <div style={styles.buttonGroup}>
-        <Link to="/orders" style={styles.viewAllLink}>
+        <Link to="/get-orders" style={styles.viewAllLink}>
           View All Orders
         </Link>
         <button
