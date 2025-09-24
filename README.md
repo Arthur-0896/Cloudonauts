@@ -11,3 +11,8 @@ Cloudonauts ECommerce is a cloud first application. It is scalable and resilient
 - ACM(Amazon Certificate Manager)            // Issuing certificate for securing connection (HTTPS).
 - S3 (Simple Storage Service)                // Storing Images for website.
 - SES (Simple Email Service)                 // Emailing receipt to customers.
+
+# Technologies used:
+- Front-End: React.js
+- Back-End: Python Flask
+- RDBMS: PostgresSQL
