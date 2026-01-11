@@ -1,5 +1,5 @@
 # Cloudonauts ECommerce
-Cloudonauts ECommerce is a cloud native application. It is scalable and resilient, utilizing the flexibility of the cloud. 
+Cloudonauts ECommerce is a cloud native online shopping platform. It is scalable and resilient, utilizing the flexibility of the cloud. 
 
 ## Architecture Diagram
 ![Cloudonauts_main](https://github.com/user-attachments/assets/1aae54b4-a3dc-48c4-bfea-abe08d7d198f)
