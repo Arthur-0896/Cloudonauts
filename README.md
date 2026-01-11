@@ -21,3 +21,14 @@ Cloudonauts ECommerce is a cloud native online shopping platform. It is scalable
 - RDBMS: PostgresSQL
 
 ## Application Screenshots
+### Store page (Images pulled from S3, Item details populated by PostgreSQL RDS database):
+![Store page](https://github.com/user-attachments/assets/bb0cd1b9-db91-4395-aaa7-c6d454371208)
+
+### Checkout Page (Cart state maintainted through client side cookies):
+![Cart page](https://github.com/user-attachments/assets/9f98d992-4b57-49d3-a92b-5564777a1c5c)
+
+### Order confirmation page (Order recorded in RDS and message published to SQS for async email processing):
+![Confirmation Page](https://github.com/user-attachments/assets/0b65c827-0813-4f34-b2c5-8692abed4d37)
+
+### Email confirmation (Order id picked up from SQS, processed by lambda(python), and emailed through SES):
+![Email confirmation](https://github.com/user-attachments/assets/4204d9aa-fca8-4133-9e61-1b59f93ab4e7)
