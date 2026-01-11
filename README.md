@@ -15,7 +15,9 @@ Cloudonauts ECommerce is a cloud native online shopping platform. It is scalable
 - S3 (Simple Storage Service)                // Static website hosting and storing images for website.
 - SES (Simple Email Service)                 // Automating email receipts to customers.
 
-## Tech stack:
+## Tech Stack:
 - Front-End: React.js
 - Back-End: Python Flask
 - RDBMS: PostgresSQL
+
+## Application Screenshots
